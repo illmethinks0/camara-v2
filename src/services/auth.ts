@@ -283,23 +283,31 @@ export const authService = {
 
   // Logout
   async logout(refreshToken: string): Promise<Result<void, AuthError>> {
-    // Find and revoke token
-    const storedTokens = await prisma.refreshToken.findMany({
-      where: {
-        revokedAt: null,
-      },
-    });
+    try {
+      // Find and revoke token
+      const storedTokens = await prisma.refreshToken.findMany({
+        where: {
+          revokedAt: null,
+        },
+      });
 
-    for (const token of storedTokens) {
-      if (await bcrypt.compare(refreshToken, token.tokenHash)) {
-        await prisma.refreshToken.update({
-          where: { id: token.id },
-          data: { revokedAt: new Date() },
-        });
-        return ok(undefined);
+      for (const token of storedTokens) {
+        if (await bcrypt.compare(refreshToken, token.tokenHash)) {
+          await prisma.refreshToken.update({
+            where: { id: token.id },
+            data: { revokedAt: new Date() },
+          });
+          return ok(undefined);
+        }
       }
-    }
 
-    return ok(undefined); // Token not found is still successful logout
+      return ok(undefined); // Token not found is still successful logout
+    } catch (error) {
+      return err({
+        code: ErrorCodes.DB_CONNECTION_FAILED,
+        message: 'Database error during logout',
+        context: { original: String(error) },
+      }, 'retryable');
+    }
   },
 };

@@ -37,7 +37,7 @@ describe('Database Connection', () => {
   });
 
   it('should create and retrieve a task', async () => {
-    const uniqueTitle = `Test Task ${Date.now()}`;
+    const uniqueTitle = `Test Task ${Date.now()}-${Math.random()}`;
     const task = await prisma.task.create({
       data: {
         title: uniqueTitle,
@@ -50,7 +50,11 @@ describe('Database Connection', () => {
     expect(task.title).toBe(uniqueTitle);
     expect(task.status).toBe('pending');
 
-    // Cleanup
-    await prisma.task.delete({ where: { id: task.id } });
+    // Cleanup - wrapped in try/catch in case already deleted
+    try {
+      await prisma.task.delete({ where: { id: task.id } });
+    } catch {
+      // Task may have been cleaned up by another test
+    }
   });
 });

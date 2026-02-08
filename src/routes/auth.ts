@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { authService, verifyAccessToken } from '../services/auth.js';
 import { httpBoundary } from '../adapters/http.js';
 import { z } from 'zod';
+import rateLimit from '@fastify/rate-limit';
 
 // Validation schemas
 const registerSchema = z.object({
@@ -21,6 +22,19 @@ const refreshSchema = z.object({
 
 // Auth routes
 export async function authRoutes(app: FastifyInstance) {
+  // Register rate limiter for auth endpoints
+  await app.register(rateLimit, {
+    max: 5,
+    timeWindow: '15 minutes',
+    errorResponseBuilder: (req, context) => ({
+      error: {
+        code: 'RATE_LIMIT_EXCEEDED',
+        message: `Rate limit exceeded. Retry after ${context.after}`,
+      },
+      recoverability: 'retryable',
+    }),
+  });
+
   // POST /auth/register
   app.post('/register', async (request, reply) => {
     const parseResult = registerSchema.safeParse(request.body);

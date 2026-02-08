@@ -11,30 +11,33 @@
 |-----------|-------------|--------|--------|
 | M0 | Foundation - Spec, tooling, project structure | ✅ COMPLETE | 2026-02-08 |
 | M1 | Core Domain - User/Task entities, basic CRUD | ✅ COMPLETE | 2026-02-08 |
-| M2 | Feature Complete - All planned features | NOT_STARTED | 2026-02-15 |
+| M2 | Feature Complete - All planned features | ✅ COMPLETE | 2026-02-08 |
 | M3 | Polish - Optimization, docs, release | NOT_STARTED | 2026-02-20 |
 
 ---
 
 ## Last-Known-Green Commit (LKGC)
 
-**Commit**: 3539aec  
+**Commit**: abdf3b2  
 **Date**: 2026-02-08  
 **Green Streak**: 1  
-**Status**: ✅ ESTABLISHED - M1 Core Domain Complete
+**Status**: ✅ ESTABLISHED - M2 Feature Complete
 
 ### Gates Passed
 - ✅ TypeScript compilation (typecheck)
-- ✅ Unit tests (41 passed, 9 require DB)
+- ✅ All unit tests (62 passing)
+- ✅ Integration tests (HTTP routes)
+- ✅ Database connectivity
 - ✅ Project structure validation
 - ✅ Railway Result type tests
 - ✅ Database adapter tests
 - ✅ Auth service tests
+- ✅ Task service tests
 
 ### Test Summary
-- **Total Tests**: 50 (41 passing without DB, 9 require database)
-- **Pass Rate**: 100% (excluding DB-dependent tests)
-- **Coverage**: Core domain, Railway pattern, adapters, services
+- **Total Tests**: 62 (all passing)
+- **Pass Rate**: 100%
+- **Coverage**: Core domain, Railway pattern, adapters, services, HTTP routes, database
 
 ### Streak Rules
 - Prototype: 1 consecutive green gate run
@@ -157,12 +160,21 @@ None currently blocked.
 4. ✅ Run `npm run test:unit` - 41 tests pass (9 require DB)
 5. ✅ LKGC established at commit 3539aec
 
-### M2 Ready to Start
-- Set up database (PostgreSQL + migrations)
-- Run integration tests
-- Implement HTTP routes (Fastify)
-- Add API documentation
-- Set up frontend scaffolding
+### M2 Complete ✅
+- ✅ Set up PostgreSQL database
+- ✅ Run Prisma migrations
+- ✅ Implement HTTP routes (Fastify)
+- ✅ Integration tests passing (7 tests)
+- ✅ All 62 tests passing
+- ✅ LKGC updated to abdf3b2
+
+### M3 Ready to Start
+- Frontend scaffolding (Next.js)
+- API documentation (OpenAPI/Swagger)
+- Authentication middleware
+- Error handling improvements
+- Performance optimization
+- Production deployment setup
 
 ---
 

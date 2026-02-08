@@ -20,32 +20,34 @@ describe('Database Connection', () => {
   });
 
   it('should create and retrieve a user', async () => {
+    const uniqueEmail = `db-test-${Date.now()}@example.com`;
     const user = await prisma.user.create({
       data: {
-        email: 'test@example.com',
+        email: uniqueEmail,
         name: 'Test User',
         passwordHash: 'hashedpassword',
       },
     });
 
     expect(user.id).toBeDefined();
-    expect(user.email).toBe('test@example.com');
+    expect(user.email).toBe(uniqueEmail);
 
     // Cleanup
     await prisma.user.delete({ where: { id: user.id } });
   });
 
   it('should create and retrieve a task', async () => {
+    const uniqueTitle = `Test Task ${Date.now()}`;
     const task = await prisma.task.create({
       data: {
-        title: 'Test Task',
+        title: uniqueTitle,
         description: 'Test Description',
         diffEstimate: 'small',
       },
     });
 
     expect(task.id).toBeDefined();
-    expect(task.title).toBe('Test Task');
+    expect(task.title).toBe(uniqueTitle);
     expect(task.status).toBe('pending');
 
     // Cleanup

@@ -1,0 +1,156 @@
+# Master Resumption Prompt
+
+You are resuming work on the CAMARA v2 project. This is a zero-shot resumption prompt - you have all the context needed to continue.
+
+## Quick Start (Run these in order)
+
+1. **Check Status**
+   ```bash
+   cat docs/status.md
+   ```
+
+2. **View Ready Tasks**
+   ```bash
+   bd ready
+   # OR if bd unavailable:
+   # cat docs/task_graph.jsonl | grep '"status":"ready"'
+   ```
+
+3. **Understand the Architecture**
+   ```bash
+   cat docs/spec_v1.md
+   ```
+
+4. **Run Gates to Verify State**
+   ```bash
+   ./scripts/gates.sh
+   ```
+
+## Current State
+
+- **Milestone**: M0 - Foundation
+- **Risk Tier**: prototype
+- **Approval Mode**: interactive
+- **LKGC**: Not yet established
+- **Fallback Mode**: Active (bd CLI available but using file-based tracking)
+
+## Key Documents
+
+| Document | Purpose | Check First |
+|----------|---------|-------------|
+| docs/status.md | Current milestone, ready frontier, blockers | YES |
+| docs/inputs_pack.md | App summary, risk tier, assumptions | Context |
+| docs/spec_v1.md | Railway pattern, Result type, boundaries | Before coding |
+| docs/evals.md | Test commands, verification plans | Before commit |
+| docs/glossary.md | Terminology definitions | When confused |
+| docs/adrs/*.md | Architecture decisions | For context |
+
+## The Loop Protocol
+
+For each task from `bd ready`:
+
+1. **Select**: Pick a task, mark IN_PROGRESS
+   ```bash
+   bd update <id> --status in_progress
+   ```
+
+2. **TDD**: Write tests that fail for missing behavior
+
+3. **Implement**: Write minimal code to pass tests
+
+4. **Verify**: Run gates
+   ```bash
+   ./scripts/gates.sh
+   ```
+
+5. **Retry Budget**: If fails 3 times:
+   - Stop
+   - Write docs/blockers/camarav2-XXXX.md
+   - Request help
+
+6. **Success**: Commit and mark DONE
+   ```bash
+   git add .
+   git commit -m "feat: <description>"
+   bd update <id> --status done
+   ```
+
+## Railway Pattern (CRITICAL)
+
+All boundary functions MUST return Result<T, E>:
+
+```typescript
+type Result<T, E> = 
+  | { ok: true; data: T }
+  | { ok: false; error: E; recoverability: 'retryable' | 'terminal' };
+
+// NEVER throw across boundaries
+// ALWAYS return Result
+```
+
+See `docs/spec_v1.md` for full implementation.
+
+## Constraints
+
+- **No code until APPROVED**: Wait for explicit approval
+- **Max diff**: 800 LOC (prototype tier)
+- **All gates must pass**: Before commit
+- **Contract-first**: API before implementation
+- **Approval required**: Dependencies, schema changes, destructive ops
+
+## Ambiguity Gate Status
+
+Currently NOT READY - Blockers B1-B3 must be resolved:
+1. B1: Primary programming language/stack?
+2. B2: Database selection?
+3. B3: Frontend framework?
+
+See `docs/inputs_pack.md` for details.
+
+## Getting Help
+
+1. Check `docs/glossary.md` for terminology
+2. Review `docs/adrs/` for decisions
+3. Check `docs/blockers/` for known issues
+4. Read `docs/spec_v1.md` for implementation details
+
+## Commands Reference
+
+```bash
+# Task management
+bd ready                    # List ready tasks
+bd show <id>               # Show task details
+bd update <id> --status in_progress  # Claim task
+bd update <id> --status done         # Mark done
+
+# Verification
+./scripts/check_env.sh     # Environment check
+./scripts/gates.sh         # Run all gates
+
+# Git
+git status
+git add .
+git commit -m "..."
+git push
+```
+
+## Evidence
+
+All gate runs create evidence in `evidence/iteration-XXXX/`:
+- timestamp
+- commit hash
+- gate results
+- logs
+- summary.json
+
+## Remember
+
+- **Spec-first**: No code until spec is approved
+- **Eval-first**: Tests before implementation
+- **Railway boundaries**: Result<T,E> everywhere
+- **Ratchet quality**: LKGC never regresses
+- **Context hygiene**: Archive old evidence
+
+---
+
+**You are now ready to resume work. Check `docs/status.md` and `bd ready` for next steps.**

@@ -1,0 +1,12 @@
+.beads/
+evidence/
+*.log
+*.local.json
+.env
+.env.local
+.env.*.local
+node_modules/
+dist/
+build/
+coverage/
+.DS_Store

@@ -54,7 +54,10 @@ export function map<T, U, E extends Error>(
   result: Result<T, E>,
   fn: (data: T) => U
 ): Result<U, E> {
-  return isOk(result) ? ok(fn(result.data)) : result;
+  if (isOk(result)) {
+    return ok(fn(result.data)) as Result<U, E>;
+  }
+  return result;
 }
 
 // Chain results
@@ -62,5 +65,8 @@ export function flatMap<T, U, E extends Error>(
   result: Result<T, E>,
   fn: (data: T) => Result<U, E>
 ): Result<U, E> {
-  return isOk(result) ? fn(result.data) : result;
+  if (isOk(result)) {
+    return fn(result.data);
+  }
+  return result as Result<U, E>;
 }

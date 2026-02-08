@@ -6,14 +6,18 @@ describe('Railway Result Pattern', () => {
     it('should create a success result with data', () => {
       const result = ok(42);
       expect(result.ok).toBe(true);
-      expect(result.data).toBe(42);
+      if (result.ok) {
+        expect(result.data).toBe(42);
+      }
     });
 
     it('should work with complex data', () => {
       const data = { id: '1', name: 'Test' };
       const result = ok(data);
       expect(result.ok).toBe(true);
-      expect(result.data).toEqual(data);
+      if (result.ok) {
+        expect(result.data).toEqual(data);
+      }
     });
   });
 
@@ -22,15 +26,19 @@ describe('Railway Result Pattern', () => {
       const error = { code: 'TEST_ERROR', message: 'Test error' };
       const result = err(error);
       expect(result.ok).toBe(false);
-      expect(result.error).toEqual(error);
-      expect(result.recoverability).toBe('terminal');
+      if (!result.ok) {
+        expect(result.error).toEqual(error);
+        expect(result.recoverability).toBe('terminal');
+      }
     });
 
     it('should support retryable errors', () => {
       const error = { code: 'NETWORK_ERROR', message: 'Network failed' };
       const result = err(error, 'retryable');
       expect(result.ok).toBe(false);
-      expect(result.recoverability).toBe('retryable');
+      if (!result.ok) {
+        expect(result.recoverability).toBe('retryable');
+      }
     });
   });
 
@@ -68,28 +76,40 @@ describe('Railway Result Pattern', () => {
   describe('map', () => {
     it('should transform success values', () => {
       const result = map(ok(21), (x) => x * 2);
-      expect(isOk(result) && result.data).toBe(42);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data).toBe(42);
+      }
     });
 
     it('should pass through errors unchanged', () => {
       const error = { code: 'ERROR', message: 'Error' };
-      const result = map(err<number, typeof error>(error), (x) => x * 2);
-      expect(isErr(result) && result.error).toEqual(error);
+      const result = map(err(error), (x: number) => x * 2);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toEqual(error);
+      }
     });
   });
 
   describe('flatMap', () => {
     it('should chain successful operations', () => {
       const result = flatMap(ok(21), (x) => ok(x * 2));
-      expect(isOk(result) && result.data).toBe(42);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.data).toBe(42);
+      }
     });
 
     it('should short-circuit on first error', () => {
       const error = { code: 'FIRST_ERROR', message: 'First' };
-      const result = flatMap(err<number, typeof error>(error), () =>
+      const result = flatMap(err(error), () =>
         err({ code: 'SECOND_ERROR', message: 'Second' })
       );
-      expect(isErr(result) && result.error.code).toBe('FIRST_ERROR');
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('FIRST_ERROR');
+      }
     });
   });
 
@@ -97,9 +117,12 @@ describe('Railway Result Pattern', () => {
     it('should have required error fields', () => {
       const error = { code: 'TEST', message: 'Test', context: { detail: 'info' } };
       const result = err(error);
-      expect(isErr(result) && result.error.code).toBe('TEST');
-      expect(isErr(result) && result.error.message).toBe('Test');
-      expect(isErr(result) && result.error.context).toEqual({ detail: 'info' });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('TEST');
+        expect(result.error.message).toBe('Test');
+        expect(result.error.context).toEqual({ detail: 'info' });
+      }
     });
   });
 });

@@ -1,17 +1,24 @@
 import { describe, it, expect } from 'vitest';
-import { ok, err, isOk, isErr, unwrapOr, map, flatMap } from './result.js';
+import { ok, err, isOk, isErr, unwrapOr, map, flatMap } from '../core/result.js';
 
-describe('Result', () => {
+describe('Railway Result Pattern', () => {
   describe('ok', () => {
-    it('should create a success result', () => {
+    it('should create a success result with data', () => {
       const result = ok(42);
       expect(result.ok).toBe(true);
       expect(result.data).toBe(42);
     });
+
+    it('should work with complex data', () => {
+      const data = { id: '1', name: 'Test' };
+      const result = ok(data);
+      expect(result.ok).toBe(true);
+      expect(result.data).toEqual(data);
+    });
   });
 
   describe('err', () => {
-    it('should create an error result', () => {
+    it('should create an error result with terminal recoverability by default', () => {
       const error = { code: 'TEST_ERROR', message: 'Test error' };
       const result = err(error);
       expect(result.ok).toBe(false);
@@ -22,6 +29,7 @@ describe('Result', () => {
     it('should support retryable errors', () => {
       const error = { code: 'NETWORK_ERROR', message: 'Network failed' };
       const result = err(error, 'retryable');
+      expect(result.ok).toBe(false);
       expect(result.recoverability).toBe('retryable');
     });
   });
@@ -29,6 +37,9 @@ describe('Result', () => {
   describe('isOk', () => {
     it('should return true for success results', () => {
       expect(isOk(ok(42))).toBe(true);
+    });
+
+    it('should return false for error results', () => {
       expect(isOk(err({ code: 'ERROR', message: 'Error' }))).toBe(false);
     });
   });
@@ -36,6 +47,9 @@ describe('Result', () => {
   describe('isErr', () => {
     it('should return true for error results', () => {
       expect(isErr(err({ code: 'ERROR', message: 'Error' }))).toBe(true);
+    });
+
+    it('should return false for success results', () => {
       expect(isErr(ok(42))).toBe(false);
     });
   });
@@ -46,7 +60,8 @@ describe('Result', () => {
     });
 
     it('should return fallback for error', () => {
-      expect(unwrapOr(err({ code: 'ERROR', message: 'Error' }), 0)).toBe(0);
+      const error = { code: 'ERROR', message: 'Error' };
+      expect(unwrapOr(err(error), 0)).toBe(0);
     });
   });
 
@@ -56,9 +71,9 @@ describe('Result', () => {
       expect(isOk(result) && result.data).toBe(42);
     });
 
-    it('should pass through errors', () => {
+    it('should pass through errors unchanged', () => {
       const error = { code: 'ERROR', message: 'Error' };
-      const result = map(err(error), (x: number) => x * 2);
+      const result = map(err<number, typeof error>(error), (x) => x * 2);
       expect(isErr(result) && result.error).toEqual(error);
     });
   });
@@ -69,10 +84,22 @@ describe('Result', () => {
       expect(isOk(result) && result.data).toBe(42);
     });
 
-    it('should short-circuit on error', () => {
-      const error = { code: 'ERROR', message: 'Error' };
-      const result = flatMap(err<number, typeof error>(error), (x) => ok(x * 2));
-      expect(isErr(result) && result.error).toEqual(error);
+    it('should short-circuit on first error', () => {
+      const error = { code: 'FIRST_ERROR', message: 'First' };
+      const result = flatMap(err<number, typeof error>(error), () =>
+        err({ code: 'SECOND_ERROR', message: 'Second' })
+      );
+      expect(isErr(result) && result.error.code).toBe('FIRST_ERROR');
+    });
+  });
+
+  describe('Error structure', () => {
+    it('should have required error fields', () => {
+      const error = { code: 'TEST', message: 'Test', context: { detail: 'info' } };
+      const result = err(error);
+      expect(isErr(result) && result.error.code).toBe('TEST');
+      expect(isErr(result) && result.error.message).toBe('Test');
+      expect(isErr(result) && result.error.context).toEqual({ detail: 'info' });
     });
   });
 });

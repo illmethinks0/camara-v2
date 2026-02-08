@@ -3,9 +3,10 @@ import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { authRoutes } from './routes/auth.js';
 import { taskRoutes } from './routes/tasks.js';
+import { registerSwagger } from './plugins/swagger.js';
 
 // Create app
-export function createApp() {
+export async function createApp() {
   const app = Fastify({
     logger: true,
   });
@@ -18,8 +19,26 @@ export function createApp() {
 
   app.register(cookie);
 
+  // Register swagger
+  await registerSwagger(app);
+
   // Health check
-  app.get('/health', async () => {
+  app.get('/health', {
+    schema: {
+      description: 'Health check endpoint',
+      tags: ['Health'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string' },
+            timestamp: { type: 'string' },
+            version: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async () => {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

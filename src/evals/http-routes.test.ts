@@ -3,10 +3,10 @@ import { createApp } from '../index.js';
 import { prisma } from '../adapters/db.js';
 
 describe('HTTP Routes', () => {
-  let app: ReturnType<typeof createApp>;
+  let app: Awaited<ReturnType<typeof createApp>>;
 
   beforeAll(async () => {
-    app = createApp();
+    app = await createApp();
     await app.ready();
   });
 

@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  role          UserRole  @default(user)
+  passwordHash  String    @map("password_hash")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // Relations
+  tasks         Task[]
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  ipAddress String?   @map("ip_address")
+  userAgent String?   @map("user_agent")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Task {
+  id            String         @id @default(uuid())
+  title         String
+  description   String
+  status        TaskStatus     @default(pending)
+  priority      Int            @default(2)
+  assigneeId    String?        @map("assignee_id")
+  parentId      String?        @map("parent_id")
+  tags          String[]
+  deliverables  String[]
+  evals         String[]
+  lane          TaskLane       @default(backend)
+  risk          TaskRisk       @default(low)
+  diffEstimate  TaskDiffEstimate @map("diff_estimate")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  assignee User? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
+  parent   Task? @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children Task[] @relation("TaskHierarchy")
+
+  @@index([status])
+  @@index([assigneeId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("tasks")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  action    String
+  resource  String
+  context   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  done
+  blocked
+}
+
+enum TaskLane {
+  frontend
+  backend
+  data
+  auth
+  qa
+  devops
+}
+
+enum TaskRisk {
+  low
+  med
+  high
+}
+
+enum TaskDiffEstimate {
+  very_small
+  small
+  medium
+  large
+}

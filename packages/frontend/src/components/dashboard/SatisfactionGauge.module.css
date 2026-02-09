@@ -1,0 +1,130 @@
+.satisfactionGauge {
+  background: linear-gradient(135deg, var(--bg-white) 0%, rgba(40, 167, 69, 0.05) 100%);
+}
+
+.header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.gaugeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chartWrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  margin-bottom: var(--spacing-lg);
+}
+
+.scoreDisplay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -20%);
+  text-align: center;
+}
+
+.scoreValue {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-xs);
+}
+
+.scoreLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--font-weight-medium);
+}
+
+.metrics {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background-color: var(--bg-gray);
+  border-radius: var(--radius-md);
+  width: 100%;
+}
+
+.metricItem {
+  text-align: center;
+  flex: 1;
+}
+
+.metricValue {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-red);
+  margin-bottom: var(--spacing-xs);
+}
+
+.metricLabel {
+  font-size: var(--font-size-xs);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.divider {
+  width: 1px;
+  height: 40px;
+  background-color: var(--border-light);
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.excellent {
+  background-color: var(--accent-positive);
+}
+
+.good {
+  background-color: var(--accent-warning);
+}
+
+.poor {
+  background-color: var(--accent-negative);
+}
+
+@media (max-width: 768px) {
+  .metrics {
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .divider {
+    width: 40px;
+    height: 1px;
+  }
+  
+  .scoreValue {
+    font-size: var(--font-size-2xl);
+  }
+}

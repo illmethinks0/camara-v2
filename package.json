@@ -1,37 +1,32 @@
 {
-  "name": "camara-v2",
+  "name": "camarav2",
   "version": "1.0.0",
   "description": "Production-ready full-stack application with Railway pattern",
-  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsc",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "db:generate": "prisma generate",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy"
-  },
-  "dependencies": {
-    "@fastify/cookie": "^9.2.0",
-    "@fastify/cors": "^8.5.0",
-    "@fastify/rate-limit": "^8.1.1",
-    "@fastify/swagger": "^8.15.0",
-    "@fastify/swagger-ui": "^2.1.0",
-    "@prisma/client": "^5.8.0",
-    "bcrypt": "^5.1.1",
-    "dotenv": "^16.3.1",
-    "fastify": "^4.25.0",
-    "jsonwebtoken": "^9.0.2",
-    "zod": "^3.22.4"
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=packages/backend",
+    "build:frontend": "npm run build --workspace=packages/frontend",
+    "test": "npm run test --workspaces",
+    "test:unit": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test:unit --workspace=packages/backend",
+    "test:frontend": "npm run test --workspace=packages/frontend",
+    "typecheck": "npm run typecheck --workspaces",
+    "lint": "npm run lint --workspaces",
+    "format:check": "echo 'Format check not configured'",
+    "db:generate": "npm run db:generate --workspace=packages/backend",
+    "db:migrate:dev": "npm run db:migrate:dev --workspace=packages/backend",
+    "db:migrate:deploy": "npm run db:migrate:deploy --workspace=packages/backend"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/jsonwebtoken": "^9.0.5",
-    "@types/node": "^20.10.0",
-    "prisma": "^5.8.0",
-    "typescript": "^5.3.0",
-    "vitest": "^1.1.0"
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.0"
   },
   "engines": {
     "node": ">=18.0.0"

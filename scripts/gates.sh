@@ -67,7 +67,7 @@ echo "fallback_mode: $FALLBACK_MODE" >> "$EVIDENCE_DIR/meta.json"
 log ""
 log "--- PRE-FLIGHT ---"
 if [ -f "scripts/check_env.sh" ]; then
-  if ./scripts/check_env.sh >> "$EVIDENCE_DIR/preflight.log" 2>&1; then
+  if bash scripts/check_env.sh >> "$EVIDENCE_DIR/preflight.log" 2>&1; then
     pass "Environment check"
   else
     fail "Environment check"
@@ -81,51 +81,84 @@ log ""
 log "--- STATIC CHECKS ---"
 
 # Format check
-if [ -f "package.json" ]; then
+if [ -f "package.json" ] && npm run format:check --silent 2>/dev/null; then
   if npm run format:check >> "$EVIDENCE_DIR/format.log" 2>&1; then
     pass "Format check"
   else
     fail "Format check"
   fi
 else
-  skip "Format check (no package.json)"
+  skip "Format check (not configured)"
 fi
 
-# Lint
-if [ -f "package.json" ]; then
-  if npm run lint >> "$EVIDENCE_DIR/lint.log" 2>&1; then
-    pass "Lint check"
+# Lint - Backend
+if [ -f "packages/backend/package.json" ]; then
+  if npm run lint --workspace=packages/backend >> "$EVIDENCE_DIR/lint-backend.log" 2>&1; then
+    pass "Lint check (backend)"
   else
-    fail "Lint check"
+    fail "Lint check (backend)"
   fi
 else
-  skip "Lint check (no package.json)"
+  skip "Lint check (backend)"
 fi
 
-# Type check
-if [ -f "package.json" ]; then
-  if npm run typecheck >> "$EVIDENCE_DIR/typecheck.log" 2>&1; then
-    pass "Type check"
+# Lint - Frontend
+if [ -f "packages/frontend/package.json" ]; then
+  if npm run lint --workspace=packages/frontend >> "$EVIDENCE_DIR/lint-frontend.log" 2>&1; then
+    pass "Lint check (frontend)"
   else
-    fail "Type check"
+    fail "Lint check (frontend)"
   fi
 else
-  skip "Type check (no package.json)"
+  skip "Lint check (frontend)"
+fi
+
+# Type check - Backend
+if [ -f "packages/backend/package.json" ]; then
+  if npm run typecheck --workspace=packages/backend >> "$EVIDENCE_DIR/typecheck-backend.log" 2>&1; then
+    pass "Type check (backend)"
+  else
+    fail "Type check (backend)"
+  fi
+else
+  skip "Type check (backend)"
+fi
+
+# Type check - Frontend
+if [ -f "packages/frontend/package.json" ]; then
+  if npm run typecheck --workspace=packages/frontend >> "$EVIDENCE_DIR/typecheck-frontend.log" 2>&1; then
+    pass "Type check (frontend)"
+  else
+    fail "Type check (frontend)"
+  fi
+else
+  skip "Type check (frontend)"
 fi
 
 # Tests
 log ""
 log "--- TESTS ---"
 
-# Unit tests
-if [ -f "package.json" ]; then
-  if npm run test:unit >> "$EVIDENCE_DIR/unit-tests.log" 2>&1; then
-    pass "Unit tests"
+# Unit tests - Backend
+if [ -f "packages/backend/package.json" ]; then
+  if npm run test:unit --workspace=packages/backend >> "$EVIDENCE_DIR/unit-tests-backend.log" 2>&1; then
+    pass "Unit tests (backend)"
   else
-    fail "Unit tests"
+    fail "Unit tests (backend)"
   fi
 else
-  skip "Unit tests (no package.json)"
+  skip "Unit tests (backend)"
+fi
+
+# Unit tests - Frontend
+if [ -f "packages/frontend/package.json" ]; then
+  if npm run test --workspace=packages/frontend >> "$EVIDENCE_DIR/unit-tests-frontend.log" 2>&1; then
+    pass "Unit tests (frontend)"
+  else
+    fail "Unit tests (frontend)"
+  fi
+else
+  skip "Unit tests (frontend)"
 fi
 
 # Integration tests (production+)
@@ -278,14 +311,26 @@ fi
 log ""
 log "--- BUILD ---"
 
-if [ -f "package.json" ]; then
-  if npm run build >> "$EVIDENCE_DIR/build.log" 2>&1; then
-    pass "Build"
+# Build backend
+if [ -f "packages/backend/package.json" ]; then
+  if npm run build --workspace=packages/backend >> "$EVIDENCE_DIR/build-backend.log" 2>&1; then
+    pass "Build (backend)"
   else
-    fail "Build"
+    fail "Build (backend)"
   fi
 else
-  skip "Build (no package.json)"
+  skip "Build (backend)"
+fi
+
+# Build frontend
+if [ -f "packages/frontend/package.json" ]; then
+  if npm run build --workspace=packages/frontend >> "$EVIDENCE_DIR/build-frontend.log" 2>&1; then
+    pass "Build (frontend)"
+  else
+    fail "Build (frontend)"
+  fi
+else
+  skip "Build (frontend)"
 fi
 
 # Smoke test

@@ -1,0 +1,159 @@
+.recentActivity {
+  background: linear-gradient(135deg, var(--bg-white) 0%, rgba(195, 22, 50, 0.02) 100%);
+  min-height: 400px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.count {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  background-color: var(--bg-gray);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-md);
+}
+
+.activitiesList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.activityItem {
+  padding: var(--spacing-md);
+  background-color: var(--bg-gray);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--border-light);
+  transition: all var(--transition-fast);
+}
+
+.activityItem:hover {
+  background-color: var(--primary-red-light);
+  border-left-color: var(--primary-red);
+  transform: translateX(2px);
+}
+
+.activityContent {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.statusIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bg-white);
+  border: 2px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.icon {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.activityInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.formType {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+  margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userInfo {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timestamp {
+  font-size: var(--font-size-sm);
+  color: var(--text-light);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--spacing-md);
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: var(--font-size-base);
+  color: var(--text-gray);
+}
+
+.footer {
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--spacing-md);
+}
+
+.viewAllButton {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-medium);
+  color: var(--primary-red);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: none;
+}
+
+.viewAllButton:hover {
+  background-color: var(--primary-red);
+  color: white;
+  border-color: var(--primary-red);
+}
+
+@media (max-width: 768px) {
+  .activityContent {
+    gap: var(--spacing-sm);
+  }
+  
+  .statusIcon {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .formType {
+    font-size: var(--font-size-sm);
+  }
+  
+  .timestamp {
+    font-size: var(--font-size-xs);
+  }
+}

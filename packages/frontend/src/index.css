@@ -1,0 +1,490 @@
+/* Import Google Fonts - Roboto (official corporate font) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+/* Cámara de Comercio de Menorca - Official Branding */
+:root {
+  /* Official Camara Menorca Brand Colors - Based on website analysis */
+  --camara-red: #d32f2f;
+  --camara-dark-red: #b71c1c;
+  --camara-blue: #1976d2;
+  --camara-dark-blue: #0d47a1;
+  --camara-light-blue: #42a5f5;
+  --camara-navy: #263238;
+  --camara-gray: #455a64;
+  --camara-light-gray: #eceff1;
+  --camara-orange: #ff9800;
+  --camara-green: #4caf50;
+  
+  /* Text Colors */
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --text-light: #ffffff;
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-accent: #fafafa;
+  
+  /* Border and Shadow */
+  --border-color: #e0e0e0;
+  --shadow: 0 2px 8px rgba(0,0,0,0.1);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,0.15);
+
+  /* Official Font Stack */
+  font-family: 'Roboto', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'Roboto', sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Typography - Official Camara Style */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--camara-navy);
+  font-weight: 500;
+  line-height: 1.2;
+  margin-bottom: 1rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: var(--camara-red);
+}
+
+h2 {
+  font-size: 2rem;
+  font-weight: 400;
+  color: var(--camara-navy);
+}
+
+h3 {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* Links - Official Style */
+a {
+  color: var(--camara-blue);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--camara-dark-blue);
+  text-decoration: underline;
+}
+
+/* Buttons - Official Camara Style */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background-color: var(--camara-red);
+  color: var(--text-light);
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+  background-color: var(--camara-dark-red);
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--camara-blue);
+  border: 2px solid var(--camara-blue);
+}
+
+.btn-secondary:hover {
+  background-color: var(--camara-blue);
+  color: var(--text-light);
+}
+
+.btn-success {
+  background-color: var(--camara-green);
+  color: var(--text-light);
+}
+
+.btn-success:hover {
+  background-color: #388e3c;
+}
+
+/* Form Elements - Official Style */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: 'Roboto', sans-serif;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  background-color: var(--bg-primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--camara-blue);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Cards - Professional Style */
+.card {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Header - Official Camara Branding */
+.header {
+  background: linear-gradient(135deg, var(--camara-red) 0%, var(--camara-dark-red) 100%);
+  color: var(--text-light);
+  padding: 16px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--camara-red), var(--camara-orange), var(--camara-blue));
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.nav a {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.nav a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-light);
+  text-decoration: none;
+}
+
+/* Main Content */
+.main-content {
+  padding: 40px 0;
+  min-height: calc(100vh - 200px);
+}
+
+/* Footer - Official Style */
+.footer {
+  background: var(--camara-navy);
+  color: var(--text-light);
+  padding: 40px 0 20px;
+  margin-top: auto;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.footer-section h3,
+.footer-section h4 {
+  color: var(--text-light);
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.footer-section p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.footer-link {
+  color: var(--camara-light-blue);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.footer-link:hover {
+  color: var(--text-light);
+  text-decoration: underline;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--text-light);
+}
+
+.footer-copyright {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.footer-social {
+  display: flex;
+  gap: 16px;
+}
+
+.footer-social a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.footer-social a:hover {
+  color: var(--camara-light-blue);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Form error styles */
+.form-input.error {
+  border-color: var(--camara-red);
+}
+
+.error-text {
+  color: var(--camara-red);
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Alert styles */
+.alert {
+  padding: 16px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  border-left: 4px solid;
+}
+
+.alert-success {
+  background-color: #e8f5e8;
+  border-left-color: var(--camara-green);
+  color: #2e7d32;
+}
+
+.alert-error {
+  background-color: #ffebee;
+  border-left-color: var(--camara-red);
+  color: #c62828;
+}
+
+.alert-warning {
+  background-color: #fff8e1;
+  border-left-color: var(--camara-orange);
+  color: #ef6c00;
+}
+
+/* Required field indicator */
+.required {
+  color: var(--camara-red);
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .header-content {
+    text-align: center;
+  }
+  
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .logo {
+    font-size: 18px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+}

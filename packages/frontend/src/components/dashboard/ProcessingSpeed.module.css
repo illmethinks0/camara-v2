@@ -1,0 +1,150 @@
+.processingSpeed {
+  background: linear-gradient(135deg, var(--bg-white) 0%, var(--accent-info) 5%, var(--bg-white) 100%);
+}
+
+.header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.mainMetric {
+  text-align: center;
+}
+
+.metricValue {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-red);
+  margin-bottom: var(--spacing-xs);
+}
+
+.metricLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--font-weight-medium);
+}
+
+.secondaryMetric {
+  padding: var(--spacing-md);
+  background-color: var(--bg-gray);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--accent-info);
+}
+
+.fastestTime {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fastestLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  font-weight: var(--font-weight-medium);
+}
+
+.fastestValue {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent-info);
+}
+
+.trendIndicator {
+  text-align: center;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.trendIcon {
+  font-size: var(--font-size-lg);
+  margin-right: var(--spacing-xs);
+}
+
+.speedGauge {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+}
+
+.gaugeContainer {
+  position: relative;
+  width: 120px;
+  height: 60px;
+}
+
+.gaugeBar {
+  position: relative;
+  width: 120px;
+  height: 60px;
+  border-radius: 120px 120px 0 0;
+  background: linear-gradient(90deg, 
+    var(--accent-positive) 0%, 
+    var(--accent-warning) 50%, 
+    var(--accent-negative) 100%);
+  overflow: hidden;
+}
+
+.gaugeBar::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  background: var(--bg-white);
+  border-radius: 100px 100px 0 0;
+}
+
+.gaugeProgress {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 40px;
+  background: var(--text-dark);
+  transform-origin: bottom;
+  transform: translate(-50%, -100%) rotate(0deg);
+  transition: transform var(--transition-normal);
+  z-index: 2;
+}
+
+.gaugeProgress::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--primary-red);
+  border-radius: 50%;
+}
+
+.gaugeLabel {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--font-size-xs);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+  .fastestTime {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: center;
+  }
+  
+  .metricValue {
+    font-size: var(--font-size-2xl);
+  }
+}

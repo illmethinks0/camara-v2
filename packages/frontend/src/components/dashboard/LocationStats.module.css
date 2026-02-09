@@ -1,0 +1,138 @@
+.locationStats {
+  background: linear-gradient(135deg, var(--bg-white) 0%, rgba(23, 162, 184, 0.05) 100%);
+}
+
+.header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.locationsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.locationItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-gray);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.locationItem:hover {
+  background-color: var(--primary-red-light);
+  transform: translateY(-1px);
+}
+
+.locationInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background-color: var(--accent-info);
+  color: white;
+  border-radius: 50%;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.locationName {
+  display: flex;
+  flex-direction: column;
+}
+
+.city {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-dark);
+}
+
+.state {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.locationMetrics {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.count {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent-info);
+}
+
+.trendUp {
+  color: var(--accent-positive);
+  font-size: var(--font-size-base);
+}
+
+.trendDown {
+  color: var(--accent-negative);
+  font-size: var(--font-size-base);
+}
+
+.trendFlat {
+  color: var(--text-gray);
+  font-size: var(--font-size-base);
+}
+
+.summary {
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.totalLocations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.summaryNumber {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--accent-info);
+}
+
+.summaryLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+  .locationItem {
+    padding: var(--spacing-sm);
+  }
+  
+  .locationInfo {
+    gap: var(--spacing-sm);
+  }
+  
+  .city {
+    font-size: var(--font-size-sm);
+  }
+  
+  .count {
+    font-size: var(--font-size-base);
+  }
+}

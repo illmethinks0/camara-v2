@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">Cámara de Comercio de Menorca</title>
+  
+  <!-- Yellow 'C' background circle -->
+  <circle cx="25" cy="32" r="22" fill="#FFC845"/>
+  
+  <!-- Red 'C' letter -->
+  <path d="M25 15 C35 15, 42 22, 42 32 C42 42, 35 49, 25 49 C20 49, 16 46, 14 42 L18 39 C19 42, 22 44, 25 44 C32 44, 37 39, 37 32 C37 25, 32 20, 25 20 C22 20, 19 22, 18 25 L14 22 C16 18, 20 15, 25 15 Z" fill="#C31632"/>
+  
+  <!-- 'ámara' text in red -->
+  <text x="52" y="38" font-family="'Open Sans', Arial, sans-serif" font-size="28" font-weight="600" fill="#C31632">ámara</text>
+  
+  <!-- 'Menorca' text in dark gray -->
+  <text x="185" y="50" font-family="'Open Sans', Arial, sans-serif" font-size="16" font-weight="400" fill="#333333">Menorca</text>
+</svg>

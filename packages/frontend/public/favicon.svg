@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" role="img" aria-labelledby="favicon-title">
+  <title id="favicon-title">Cámara de Comercio de Menorca</title>
+  
+  <!-- Yellow 'C' background circle -->
+  <circle cx="25" cy="25" r="22" fill="#FFC845"/>
+  
+  <!-- Red 'C' letter -->
+  <path d="M25 8 C35 8, 42 15, 42 25 C42 35, 35 42, 25 42 C20 42, 16 39, 14 35 L18 32 C19 35, 22 37, 25 37 C32 37, 37 32, 37 25 C37 18, 32 13, 25 13 C22 13, 19 15, 18 18 L14 15 C16 11, 20 8, 25 8 Z" fill="#C31632"/>
+</svg>

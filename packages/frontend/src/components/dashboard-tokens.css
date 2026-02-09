@@ -1,0 +1,252 @@
+/**
+ * Cámara de Comercio de Menorca Dashboard Design System
+ */
+
+:root {
+  /* Primary Colors */
+  --primary-red: #C31632;
+  --primary-red-hover: #A5122B;
+  --primary-red-light: rgba(195, 22, 50, 0.1);
+
+  /* Neutral Colors */
+  --bg-light: #fafafa;
+  --bg-white: #ffffff;
+  --bg-gray: #f8f9fa;
+  --text-dark: #333333;
+  --text-gray: #666666;
+  --text-light: #999999;
+  --border-light: #e0e0e0;
+  --border-medium: #d1d5db;
+
+  /* Accent Colors for Dashboard */
+  --accent-positive: #28a745;
+  --accent-negative: #dc3545;
+  --accent-info: #17a2b8;
+  --accent-warning: #ffc107;
+
+  /* Chart Colors */
+  --chart-primary: var(--primary-red);
+  --chart-secondary: #64748b;
+  --chart-tertiary: #94a3b8;
+  --chart-quaternary: #cbd5e1;
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1.1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-3xl: 2.5rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 10px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 10px 25px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Grid */
+  --grid-gap: 1.25rem;
+  --card-padding: 1.5rem;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-dark);
+  line-height: 1.6;
+  background-color: var(--bg-light);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+h1 {
+  font-size: var(--font-size-3xl);
+}
+
+h2 {
+  font-size: var(--font-size-2xl);
+}
+
+h3 {
+  font-size: var(--font-size-xl);
+}
+
+/* Card component */
+.card {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  padding: var(--card-padding);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
+  transition: box-shadow var(--transition-normal);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Metric display */
+.metric-value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-dark);
+  margin: var(--spacing-sm) 0;
+  line-height: 1.2;
+}
+
+.metric-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
+}
+
+.metric-change {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.metric-change-positive {
+  color: var(--accent-positive);
+}
+
+.metric-change-negative {
+  color: var(--accent-negative);
+}
+
+.metric-change-neutral {
+  color: var(--text-gray);
+}
+
+/* Button styling */
+.button {
+  background: var(--primary-red);
+  color: white;
+  padding: var(--spacing-md) var(--spacing-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background var(--transition-normal);
+  letter-spacing: 0.5px;
+}
+
+.button:hover {
+  background: var(--primary-red-hover);
+}
+
+.button:disabled {
+  background: var(--text-light);
+  cursor: not-allowed;
+}
+
+/* List styles */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-item {
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+/* Status indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: var(--spacing-sm);
+}
+
+.status-success {
+  background-color: var(--accent-positive);
+}
+
+.status-error {
+  background-color: var(--accent-negative);
+}
+
+.status-warning {
+  background-color: var(--accent-warning);
+}
+
+.status-info {
+  background-color: var(--accent-info);
+}
+
+/* Loading states */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-light);
+  border-top: 2px solid var(--primary-red);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive typography */
+@media (max-width: 768px) {
+  :root {
+    --font-size-base: 1rem;
+    --font-size-3xl: 2rem;
+    --card-padding: 1rem;
+    --grid-gap: 1rem;
+  }
+}

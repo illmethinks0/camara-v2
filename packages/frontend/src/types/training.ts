@@ -1,4 +1,4 @@
-export type PhaseId = 'diagnostico' | 'formacion' | 'finalizacion';
+export type PhaseId = 'diagnostic' | 'training' | 'completion';
 
 export type PhaseStatus =
   | 'not_started'
@@ -22,6 +22,7 @@ export interface ParticipantPhase {
   phaseId: PhaseId;
   status: PhaseStatus;
   annexId?: string;
+  annexType?: 'annex_2' | 'annex_3' | 'annex_5';
   signedAt?: string;
 }
 
@@ -37,8 +38,10 @@ export interface Participant {
   attendance: {
     sessionsCompleted: number;
     totalSessions: number;
+    hoursCompleted: number;
   };
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Annex {

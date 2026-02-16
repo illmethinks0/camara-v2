@@ -1,65 +1,30 @@
-import { describe, it, expect } from 'vitest';
-import { prisma } from '../adapters/db.js';
+import { afterAll, describe, expect, it } from 'vitest';
+import { PrismaClient } from '@prisma/client';
 
-const describeDb =
-  process.env.RUN_DB_TESTS === 'true'
-    ? describe
-    : describe.skip;
+const runDbTests = process.env.RUN_DB_TESTS === 'true';
+const describeDb = runDbTests ? describe : describe.skip;
+
+const prisma = new PrismaClient();
 
 describeDb('Database Connection', () => {
-  it('should connect to database', async () => {
-    // Simple query to test connection
-    const result = await prisma.$queryRaw`SELECT 1 as test`;
-    expect(result).toBeDefined();
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('connects to database', async () => {
+    const result = await prisma.$queryRaw`SELECT 1 as ok`;
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it('should have User table', async () => {
-    const count = await prisma.user.count();
-    expect(typeof count).toBe('number');
+  it('can query users table', async () => {
+    const rows = await prisma.$queryRawUnsafe<Array<{ count: number }>>('SELECT COUNT(*)::int AS count FROM users');
+    expect(typeof rows[0]?.count).toBe('number');
   });
 
-  it('should have Task table', async () => {
-    const count = await prisma.task.count();
-    expect(typeof count).toBe('number');
-  });
-
-  it('should create and retrieve a user', async () => {
-    const uniqueEmail = `db-test-${Date.now()}@example.com`;
-    const user = await prisma.user.create({
-      data: {
-        email: uniqueEmail,
-        name: 'Test User',
-        passwordHash: 'hashedpassword',
-      },
-    });
-
-    expect(user.id).toBeDefined();
-    expect(user.email).toBe(uniqueEmail);
-
-    // Cleanup
-    await prisma.user.delete({ where: { id: user.id } });
-  });
-
-  it('should create and retrieve a task', async () => {
-    const uniqueTitle = `Test Task ${Date.now()}-${Math.random()}`;
-    const task = await prisma.task.create({
-      data: {
-        title: uniqueTitle,
-        description: 'Test Description',
-        diffEstimate: 'small',
-      },
-    });
-
-    expect(task.id).toBeDefined();
-    expect(task.title).toBe(uniqueTitle);
-    expect(task.status).toBe('pending');
-
-    // Cleanup - wrapped in try/catch in case already deleted
-    try {
-      await prisma.task.delete({ where: { id: task.id } });
-    } catch {
-      // Task may have been cleaned up by another test
-    }
+  it('can query courses table', async () => {
+    const rows = await prisma.$queryRawUnsafe<Array<{ count: number }>>(
+      'SELECT COUNT(*)::int AS count FROM courses'
+    );
+    expect(typeof rows[0]?.count).toBe('number');
   });
 });

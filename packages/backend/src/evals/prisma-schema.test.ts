@@ -1,28 +1,33 @@
-import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync } from 'node:fs';
 
-describe('Prisma Database Schema', () => {
-  it('should have prisma/schema.prisma', () => {
+describe('Prisma Schema - CAMARA', () => {
+  it('has prisma/schema.prisma', () => {
     expect(existsSync('prisma/schema.prisma')).toBe(true);
   });
 
-  it('should define User model', () => {
-    const content = readFileSync('prisma/schema.prisma', 'utf-8');
-    expect(content).toContain('model User');
-    expect(content).toContain('email');
-    expect(content).toContain('passwordHash');
+  it('defines required CAMARA models', () => {
+    const schema = readFileSync('prisma/schema.prisma', 'utf8');
+
+    const requiredModels = [
+      'model User',
+      'model Course',
+      'model Participant',
+      'model InstructorAssignment',
+      'model Phase',
+      'model Annex',
+      'model Signature',
+      'model AttendanceRecord',
+      'model AuditLog',
+    ];
+
+    for (const modelName of requiredModels) {
+      expect(schema).toContain(modelName);
+    }
   });
 
-  it('should define Task model', () => {
-    const content = readFileSync('prisma/schema.prisma', 'utf-8');
-    expect(content).toContain('model Task');
-    expect(content).toContain('title');
-    expect(content).toContain('status');
-  });
-
-  it('should have database URL in schema', () => {
-    const content = readFileSync('prisma/schema.prisma', 'utf-8');
-    expect(content).toContain('datasource db');
-    expect(content).toContain('provider = "postgresql"');
+  it('uses postgresql datasource', () => {
+    const schema = readFileSync('prisma/schema.prisma', 'utf8');
+    expect(schema).toContain('provider = "postgresql"');
   });
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button/Button';
 import { useDemoData } from '../contexts/DemoDataContext';
@@ -6,7 +6,7 @@ import styles from './Registration.module.css';
 
 export const Registration: React.FC = () => {
   const navigate = useNavigate();
-  const { courses, registerParticipant } = useDemoData();
+  const { courses, registerParticipant, error: contextError } = useDemoData();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -15,16 +15,34 @@ export const Registration: React.FC = () => {
     phone: '',
     courseId: courses[0]?.id || '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  useEffect(() => {
+    if (!form.courseId && courses[0]) {
+      setForm((prev) => ({ ...prev, courseId: courses[0].id }));
+    }
+  }, [courses, form.courseId]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    registerParticipant(form);
-    navigate('/admin');
+    setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      await registerParticipant(form);
+      navigate('/admin');
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : 'No se pudo registrar el participante');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const activeError = localError || contextError;
 
   return (
     <div className={styles.container}>
@@ -33,6 +51,11 @@ export const Registration: React.FC = () => {
         <p className={styles.subtitle}>
           Completa los datos para iniciar el flujo del programa y generar el primer anexo.
         </p>
+        {activeError ? (
+          <p role="alert" className={styles.subtitle}>
+            {activeError}
+          </p>
+        ) : null}
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.row}>
             <div className={styles.field}>
@@ -104,7 +127,9 @@ export const Registration: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => navigate('/admin')}>
               Cancelar
             </Button>
-            <Button type="submit">Registrar participante</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Registrando...' : 'Registrar participante'}
+            </Button>
           </div>
         </form>
       </div>

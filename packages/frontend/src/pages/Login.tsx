@@ -1,34 +1,44 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button/Button';
+import { useAuth } from '../contexts/AuthContext';
 import styles from './Auth.module.css';
-
-const DEMO_PASSWORD = 'CamaraMenorca2025';
-
-const roleRouteByEmail: Record<string, string> = {
-  'admin@camara-menorca.es': '/admin',
-  'instructor1@camara-menorca.es': '/instructor',
-  'participant1@camara-menorca.es': '/participante',
-};
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    const route = roleRouteByEmail[email.trim().toLowerCase()];
+    const result = await login(email.trim(), password);
 
-    if (!route || password !== DEMO_PASSWORD) {
-      setError('Credenciales invalidas');
+    if (!result.success || !result.data?.user.role) {
+      setError(result.error?.message || 'Credenciales invalidas');
+      setIsSubmitting(false);
       return;
     }
 
-    navigate(route);
+    if (result.data.user.role === 'administrator') {
+      navigate('/admin');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (result.data.user.role === 'instructor') {
+      navigate('/instructor');
+      setIsSubmitting(false);
+      return;
+    }
+
+    navigate('/participante');
+    setIsSubmitting(false);
   };
 
   return (
@@ -67,11 +77,11 @@ export const Login: React.FC = () => {
               className={styles.input}
             />
           </div>
-          <Button type="submit" className={styles.submitButton}>
-            Entrar
+          <Button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+            {isSubmitting ? 'Validando...' : 'Entrar'}
           </Button>
         </form>
-        <p className={styles.switchAuth}>Demo: usa las credenciales del guion de Madrid.</p>
+        <p className={styles.switchAuth}>Usa las credenciales demo del guion de Madrid.</p>
       </div>
     </div>
   );

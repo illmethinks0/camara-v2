@@ -1,13 +1,18 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User, APIResult } from '../types/camara';
-import { login as apiLogin, register as apiRegister, logout as apiLogout } from '../services/camaraApi';
+import type { User, APIResult, LoginResponse, RegisterResponse } from '../types/camara';
+import {
+  getMe as apiGetMe,
+  login as apiLogin,
+  register as apiRegister,
+  logout as apiLogout,
+} from '../services/camaraApi';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<APIResult<{ user: User }>>;
-  register: (email: string, password: string, name: string) => Promise<APIResult<{ user: User }>>;
+  login: (email: string, password: string) => Promise<APIResult<LoginResponse>>;
+  register: (email: string, password: string, name: string) => Promise<APIResult<RegisterResponse>>;
   logout: () => Promise<void>;
 }
 
@@ -18,14 +23,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // TODO: Validate token and get user info
+    const bootstrapAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await apiGetMe();
+      if (result.success && result.data?.user) {
+        setUser(result.data.user);
+      } else {
+        await apiLogout();
+        setUser(null);
+      }
+
       setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    };
+
+    void bootstrapAuth();
   }, []);
 
   const login = async (email: string, password: string) => {

@@ -1,137 +1,161 @@
 import { FastifyInstance } from 'fastify';
-import { authService } from '../services/auth.js';
-import { httpBoundary } from '../adapters/http.js';
-import { authenticateRequest } from '../middleware/auth.js';
-import { z } from 'zod';
 import rateLimit from '@fastify/rate-limit';
+import { z } from 'zod';
+import { Role } from '../core/domain.js';
+import { isOk } from '../core/result.js';
+import { authenticateRequest } from '../middleware/auth.js';
+import { authService } from '../services/auth.js';
 
-// Validation schemas
 const registerSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
   password: z.string().min(12),
+  role: Role.optional(),
 });
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string(),
+  password: z.string().min(1),
 });
 
 const refreshSchema = z.object({
-  refreshToken: z.string(),
+  refreshToken: z.string().min(1),
 });
 
 const logoutSchema = z.object({
   refreshToken: z.string().optional(),
 });
 
-// Auth routes
 export async function authRoutes(app: FastifyInstance) {
-  // Register rate limiter for auth endpoints
   await app.register(rateLimit, {
-    max: 5,
+    max: 20,
     timeWindow: '15 minutes',
-    errorResponseBuilder: (req, context) => ({
-      error: {
-        code: 'RATE_LIMIT_EXCEEDED',
-        message: `Rate limit exceeded. Retry after ${context.after}`,
-      },
-      recoverability: 'retryable',
-    }),
   });
 
-  // POST /auth/register
   app.post('/register', async (request, reply) => {
-    const parseResult = registerSchema.safeParse(request.body);
-    if (!parseResult.success) {
+    const parsed = registerSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input',
-          context: parseResult.error.errors,
+          message: 'Solicitud invalida',
+          context: parsed.error.flatten(),
         },
         recoverability: 'terminal',
       });
     }
 
-    await httpBoundary(
-      () => authService.register(parseResult.data),
-      reply
-    );
+    const result = await authService.register(parsed.data);
+    if (!isOk(result)) {
+      return reply.status(result.error.code === 'DB_UNIQUE_VIOLATION' ? 409 : 400).send({
+        error: result.error,
+        recoverability: result.recoverability,
+      });
+    }
+
+    return reply.send({
+      data: {
+        user: result.data.user,
+        tokens: {
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken,
+          expiresIn: result.data.expiresIn,
+        },
+      },
+    });
   });
 
-  // POST /auth/login
   app.post('/login', async (request, reply) => {
-    const parseResult = loginSchema.safeParse(request.body);
-    if (!parseResult.success) {
+    const parsed = loginSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input',
-          context: parseResult.error.errors,
+          message: 'Solicitud invalida',
+          context: parsed.error.flatten(),
         },
         recoverability: 'terminal',
       });
     }
 
-    await httpBoundary(
-      () => authService.login(parseResult.data),
-      reply
-    );
+    const result = await authService.login(parsed.data);
+    if (!isOk(result)) {
+      return reply.status(401).send({
+        error: result.error,
+        recoverability: result.recoverability,
+      });
+    }
+
+    return reply.send({
+      data: {
+        user: result.data.user,
+        tokens: {
+          accessToken: result.data.accessToken,
+          refreshToken: result.data.refreshToken,
+          expiresIn: result.data.expiresIn,
+        },
+      },
+    });
   });
 
-  // POST /auth/refresh
   app.post('/refresh', async (request, reply) => {
-    const parseResult = refreshSchema.safeParse(request.body);
-    if (!parseResult.success) {
+    const parsed = refreshSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input',
-          context: parseResult.error.errors,
+          message: 'Solicitud invalida',
+          context: parsed.error.flatten(),
         },
         recoverability: 'terminal',
       });
     }
 
-    await httpBoundary(
-      () => authService.refresh(parseResult.data.refreshToken),
-      reply
-    );
+    const result = await authService.refresh(parsed.data.refreshToken);
+    if (!isOk(result)) {
+      return reply.status(401).send({
+        error: result.error,
+        recoverability: result.recoverability,
+      });
+    }
+
+    return reply.send({
+      data: {
+        accessToken: result.data.accessToken,
+        refreshToken: result.data.refreshToken,
+        expiresIn: result.data.expiresIn,
+      },
+    });
   });
 
-  // POST /auth/logout
   app.post('/logout', async (request, reply) => {
-    const parseResult = logoutSchema.safeParse(request.body);
-    if (!parseResult.success) {
+    const parsed = logoutSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid input',
-          context: parseResult.error.errors,
+          message: 'Solicitud invalida',
+          context: parsed.error.flatten(),
         },
         recoverability: 'terminal',
       });
     }
 
-    await httpBoundary(
-      () => authService.logout(parseResult.data.refreshToken ?? ''),
-      reply
-    );
+    await authService.logout(parsed.data.refreshToken ?? '');
+    return reply.send({ data: { success: true } });
   });
 
-  // GET /auth/me
   app.get('/me', { preHandler: [authenticateRequest] }, async (request, reply) => {
     if (!request.user) {
       return reply.status(401).send({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          message: 'Autenticacion requerida',
         },
         recoverability: 'terminal',
       });
     }
 
-    return reply.send({ user: request.user });
+    return reply.send({ data: { user: request.user } });
   });
 }

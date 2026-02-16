@@ -1,67 +1,63 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { isErr, isOk } from '../core/result.js';
+import { camaraStore } from './camaraStore.js';
 import { authService } from './auth.js';
-import { isOk, isErr } from '../core/result.js';
 
 describe('Auth Service', () => {
-  describe('register', () => {
-    it('should reject passwords shorter than 12 characters', async () => {
-      const result = await authService.register({
-        email: 'test@example.com',
-        name: 'Test User',
-        password: 'short',
-      });
-
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error.code).toBe('VALIDATION_ERROR');
-      }
-    });
-
-    it('should require valid email format', async () => {
-      // Email validation is handled by input validation
-      // This test ensures the interface is correct
-      expect(typeof authService.register).toBe('function');
-    });
+  beforeEach(() => {
+    camaraStore.resetForTests();
   });
 
-  describe('login', () => {
-    it('should return error for database issues', async () => {
-      const result = await authService.login({
-        email: 'nonexistent@example.com',
-        password: 'password123',
-      });
-
-      expect(isErr(result)).toBe(true);
-      // Without DB, we get DB_CONNECTION_FAILED
-      // With DB but no user, we'd get INVALID_CREDENTIALS
-      expect(['INVALID_CREDENTIALS', 'DB_CONNECTION_FAILED']).toContain(
-        (result as any).error.code
-      );
+  it('rejects short passwords on register', async () => {
+    const result = await authService.register({
+      email: 'new@example.com',
+      name: 'Nuevo Usuario',
+      password: 'short',
     });
+
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('VALIDATION_ERROR');
+    }
   });
 
-  describe('refresh', () => {
-    it('should reject invalid refresh tokens', async () => {
-      const result = await authService.refresh('invalid-token');
-
-      expect(isErr(result)).toBe(true);
-      if (isErr(result)) {
-        expect(result.error.code).toBe('UNAUTHORIZED');
-      }
+  it('logs in seeded admin with demo credentials', async () => {
+    const result = await authService.login({
+      email: 'admin@camara-menorca.es',
+      password: 'CamaraMenorca2025',
     });
+
+    expect(isOk(result)).toBe(true);
+    if (isOk(result)) {
+      expect(result.data.user.role).toBe('administrator');
+      expect(result.data.accessToken).toBeTruthy();
+      expect(result.data.refreshToken).toBeTruthy();
+    }
   });
 
-  describe('logout', () => {
-    it('should exist as a function', () => {
-      expect(typeof authService.logout).toBe('function');
+  it('fails login on bad password', async () => {
+    const result = await authService.login({
+      email: 'admin@camara-menorca.es',
+      password: 'incorrecta',
     });
 
-    it('should handle missing database gracefully', async () => {
-      // Without DB configured, this will fail but that's expected
-      // The important thing is the interface is correct
-      const result = await authService.logout('some-token');
-      // Either succeeds or returns error (both valid)
-      expect(result).toBeDefined();
-    });
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('INVALID_CREDENTIALS');
+    }
+  });
+
+  it('rejects invalid refresh token', async () => {
+    const result = await authService.refresh('invalid-token');
+
+    expect(isErr(result)).toBe(true);
+    if (isErr(result)) {
+      expect(result.error.code).toBe('UNAUTHORIZED');
+    }
+  });
+
+  it('logout resolves even with invalid token', async () => {
+    const result = await authService.logout('invalid-token');
+    expect(isOk(result)).toBe(true);
   });
 });

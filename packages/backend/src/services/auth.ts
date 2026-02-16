@@ -1,313 +1,279 @@
 import bcrypt from 'bcrypt';
+import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import { userRepository, prisma } from '../adapters/db.js';
-import { Result, ok, err } from '../core/result.js';
-import { User, UserRole, ErrorCodes } from '../core/domain.js';
+import { camaraStore } from './camaraStore.js';
+import { Result, err, ok } from '../core/result.js';
+import { AuthenticatedUser, ErrorCodes, Role } from '../core/domain.js';
 
-// Error types
 export interface AuthError {
   code: string;
   message: string;
   context?: Record<string, unknown>;
 }
 
-// Token payload
 export interface TokenPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  role: Role;
+  name: string;
 }
 
-// Config
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const JWT_ACCESS_EXPIRY = parseInt(process.env.JWT_ACCESS_EXPIRY || '900'); // 15 min
-const JWT_REFRESH_EXPIRY = parseInt(process.env.JWT_REFRESH_EXPIRY || '604800'); // 7 days
-const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
-
-// Hash password
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
+interface RefreshTokenRecord {
+  token: string;
+  userId: string;
+  expiresAt: number;
+  revokedAt?: number;
 }
 
-// Verify password
-export async function verifyPassword(
-  password: string,
-  hash: string
-): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
+const JWT_SECRET = process.env.JWT_SECRET || 'camara-demo-secret-change-me';
+const ACCESS_EXPIRY_SECONDS = Number(process.env.JWT_ACCESS_EXPIRY ?? '900');
+const REFRESH_EXPIRY_SECONDS = Number(process.env.JWT_REFRESH_EXPIRY ?? '604800');
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? '12');
 
-// Generate tokens
-export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_ACCESS_EXPIRY });
-}
+const refreshTokenStore = new Map<string, RefreshTokenRecord>();
 
-export function generateRefreshToken(userId: string): string {
-  return jwt.sign({ userId, tokenId: crypto.randomUUID() }, JWT_SECRET, {
-    expiresIn: JWT_REFRESH_EXPIRY,
+function issueAccessToken(user: AuthenticatedUser): string {
+  const payload: TokenPayload = {
+    userId: user.userId,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+  };
+
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: ACCESS_EXPIRY_SECONDS,
   });
 }
 
-// Verify token
+function issueRefreshToken(userId: string): string {
+  const tokenId = crypto.randomUUID();
+  const token = jwt.sign(
+    {
+      userId,
+      tokenId,
+      kind: 'refresh',
+    },
+    JWT_SECRET,
+    {
+      expiresIn: REFRESH_EXPIRY_SECONDS,
+    }
+  );
+
+  refreshTokenStore.set(tokenId, {
+    token,
+    userId,
+    expiresAt: Date.now() + REFRESH_EXPIRY_SECONDS * 1000,
+  });
+
+  return token;
+}
+
+function parseRefreshToken(token: string): { userId: string; tokenId: string } {
+  const payload = jwt.verify(token, JWT_SECRET) as { userId: string; tokenId: string; kind?: string };
+
+  if (!payload.tokenId || payload.kind !== 'refresh') {
+    throw new Error('Invalid refresh token kind');
+  }
+
+  return {
+    userId: payload.userId,
+    tokenId: payload.tokenId,
+  };
+}
+
 export function verifyAccessToken(token: string): Result<TokenPayload, AuthError> {
   try {
     const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
     return ok(payload);
-  } catch (error) {
+  } catch {
     return err(
       {
         code: ErrorCodes.UNAUTHORIZED,
-        message: 'Invalid or expired token',
+        message: 'Token de acceso invalido o expirado',
       },
       'terminal'
     );
   }
 }
 
-// Auth service
 export const authService = {
-  // Register new user
   async register(data: {
     email: string;
     name: string;
     password: string;
-  }): Promise<Result<{ user: User; accessToken: string; refreshToken: string }, AuthError>> {
-    // Validate password
+    role?: Role;
+  }): Promise<
+    Result<
+      {
+        user: AuthenticatedUser;
+        accessToken: string;
+        refreshToken: string;
+        expiresIn: number;
+      },
+      AuthError
+    >
+  > {
     if (data.password.length < 12) {
       return err(
         {
           code: ErrorCodes.VALIDATION_ERROR,
-          message: 'Password must be at least 12 characters',
+          message: 'La contrasena debe tener al menos 12 caracteres',
         },
         'terminal'
       );
     }
 
-    // Hash password
-    const passwordHash = await hashPassword(data.password);
+    try {
+      const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
+      const user = camaraStore.createAuthUser({
+        email: data.email,
+        name: data.name,
+        passwordHash,
+        role: data.role,
+      });
 
-    // Create user
-    const userResult = await userRepository.create({
-      email: data.email,
-      name: data.name,
-      passwordHash,
-    });
+      const accessToken = issueAccessToken(user);
+      const refreshToken = issueRefreshToken(user.userId);
 
-    if (userResult.ok === false) {
-      if (userResult.error.code === ErrorCodes.DB_UNIQUE_VIOLATION) {
+      return ok({
+        user,
+        accessToken,
+        refreshToken,
+        expiresIn: ACCESS_EXPIRY_SECONDS,
+      });
+    } catch (error) {
+      if (error instanceof Error && /registrado/i.test(error.message)) {
         return err(
           {
-            code: ErrorCodes.VALIDATION_ERROR,
-            message: 'Email already exists',
+            code: ErrorCodes.DB_UNIQUE_VIOLATION,
+            message: error.message,
           },
           'terminal'
         );
       }
-      return err(userResult.error, userResult.recoverability);
+
+      return err(
+        {
+          code: ErrorCodes.INTERNAL_ERROR,
+          message: 'No se pudo registrar el usuario',
+        },
+        'retryable'
+      );
     }
-
-    const user = userResult.data;
-
-    // Generate tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role as UserRole,
-    });
-
-    const refreshToken = generateRefreshToken(user.id);
-    const refreshTokenHash = await bcrypt.hash(refreshToken, BCRYPT_ROUNDS);
-
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: refreshTokenHash,
-        expiresAt: new Date(Date.now() + JWT_REFRESH_EXPIRY * 1000),
-      },
-    });
-
-    return ok({ user, accessToken, refreshToken });
   },
 
-  // Login
   async login(data: {
     email: string;
     password: string;
-  }): Promise<Result<{ user: User; accessToken: string; refreshToken: string }, AuthError>> {
-    // Find user
-    const userResult = await userRepository.findByEmail(data.email);
-
-    if (userResult.ok === false) {
-      return err(userResult.error, userResult.recoverability);
-    }
-
-    const user = userResult.data;
-
-    if (!user || user.deletedAt) {
-      return err(
-        {
-          code: ErrorCodes.INVALID_CREDENTIALS,
-          message: 'Invalid email or password',
-        },
-        'terminal'
-      );
-    }
-
-    // Verify password
-    const isValid = await verifyPassword(data.password, user.passwordHash);
-
-    if (!isValid) {
-      return err(
-        {
-          code: ErrorCodes.INVALID_CREDENTIALS,
-          message: 'Invalid email or password',
-        },
-        'terminal'
-      );
-    }
-
-    // Generate tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role as UserRole,
-    });
-
-    const refreshToken = generateRefreshToken(user.id);
-    const refreshTokenHash = await bcrypt.hash(refreshToken, BCRYPT_ROUNDS);
-
-    // Store refresh token
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: refreshTokenHash,
-        expiresAt: new Date(Date.now() + JWT_REFRESH_EXPIRY * 1000),
+  }): Promise<
+    Result<
+      {
+        user: AuthenticatedUser;
+        accessToken: string;
+        refreshToken: string;
+        expiresIn: number;
       },
-    });
+      AuthError
+    >
+  > {
+    const userRecord = camaraStore.getUserByEmail(data.email);
 
-    return ok({ user, accessToken, refreshToken });
+    if (!userRecord) {
+      return err(
+        {
+          code: ErrorCodes.INVALID_CREDENTIALS,
+          message: 'Credenciales invalidas',
+        },
+        'terminal'
+      );
+    }
+
+    const valid = await camaraStore.verifyPassword(userRecord, data.password);
+    if (!valid) {
+      return err(
+        {
+          code: ErrorCodes.INVALID_CREDENTIALS,
+          message: 'Credenciales invalidas',
+        },
+        'terminal'
+      );
+    }
+
+    const user = camaraStore.toAuthUser(userRecord);
+    const accessToken = issueAccessToken(user);
+    const refreshToken = issueRefreshToken(user.userId);
+
+    return ok({
+      user,
+      accessToken,
+      refreshToken,
+      expiresIn: ACCESS_EXPIRY_SECONDS,
+    });
   },
 
-  // Refresh access token
-  async refresh(refreshToken: string): Promise<Result<{ accessToken: string; refreshToken: string }, AuthError>> {
-    // Verify refresh token
-    let payload: { userId: string; tokenId: string };
+  async refresh(refreshToken: string): Promise<Result<{ accessToken: string; refreshToken: string; expiresIn: number }, AuthError>> {
     try {
-      payload = jwt.verify(refreshToken, JWT_SECRET) as { userId: string; tokenId: string };
+      const payload = parseRefreshToken(refreshToken);
+      const record = refreshTokenStore.get(payload.tokenId);
+
+      if (!record || record.token !== refreshToken || record.revokedAt || record.expiresAt < Date.now()) {
+        return err(
+          {
+            code: ErrorCodes.UNAUTHORIZED,
+            message: 'Refresh token invalido o expirado',
+          },
+          'terminal'
+        );
+      }
+
+      record.revokedAt = Date.now();
+
+      const user = camaraStore.getUserById(payload.userId);
+      if (!user) {
+        return err(
+          {
+            code: ErrorCodes.UNAUTHORIZED,
+            message: 'Usuario no encontrado',
+          },
+          'terminal'
+        );
+      }
+
+      const authUser = camaraStore.toAuthUser(user);
+      const newAccessToken = issueAccessToken(authUser);
+      const newRefreshToken = issueRefreshToken(authUser.userId);
+
+      return ok({
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        expiresIn: ACCESS_EXPIRY_SECONDS,
+      });
     } catch {
       return err(
         {
           code: ErrorCodes.UNAUTHORIZED,
-          message: 'Invalid refresh token',
+          message: 'Refresh token invalido o expirado',
         },
         'terminal'
       );
     }
-
-    // Find stored refresh token
-    const storedToken = await prisma.refreshToken.findFirst({
-      where: {
-        userId: payload.userId,
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!storedToken) {
-      return err(
-        {
-          code: ErrorCodes.UNAUTHORIZED,
-          message: 'Refresh token not found or expired',
-        },
-        'terminal'
-      );
-    }
-
-    // Verify token hash
-    const isValid = await bcrypt.compare(refreshToken, storedToken.tokenHash);
-
-    if (!isValid) {
-      return err(
-        {
-          code: ErrorCodes.UNAUTHORIZED,
-          message: 'Invalid refresh token',
-        },
-        'terminal'
-      );
-    }
-
-    // Get user
-    const userResult = await userRepository.findById(payload.userId);
-
-    if (userResult.ok === false || !userResult.data) {
-      return err(
-        {
-          code: ErrorCodes.UNAUTHORIZED,
-          message: 'User not found',
-        },
-        'terminal'
-      );
-    }
-
-    const user = userResult.data;
-
-    // Revoke old token
-    await prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { revokedAt: new Date() },
-    });
-
-    // Generate new tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role as UserRole,
-    });
-
-    const newRefreshToken = generateRefreshToken(user.id);
-    const newRefreshTokenHash = await bcrypt.hash(newRefreshToken, BCRYPT_ROUNDS);
-
-    // Store new refresh token
-    await prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: newRefreshTokenHash,
-        expiresAt: new Date(Date.now() + JWT_REFRESH_EXPIRY * 1000),
-      },
-    });
-
-    return ok({ accessToken, refreshToken: newRefreshToken });
   },
 
-  // Logout
   async logout(refreshToken: string): Promise<Result<void, AuthError>> {
     try {
-      // Find and revoke token
-      const storedTokens = await prisma.refreshToken.findMany({
-        where: {
-          revokedAt: null,
-        },
-      });
-
-      for (const token of storedTokens) {
-        if (await bcrypt.compare(refreshToken, token.tokenHash)) {
-          await prisma.refreshToken.update({
-            where: { id: token.id },
-            data: { revokedAt: new Date() },
-          });
-          return ok(undefined);
-        }
+      if (!refreshToken) {
+        return ok(undefined);
       }
 
-      return ok(undefined); // Token not found is still successful logout
-    } catch (error) {
-      return err({
-        code: ErrorCodes.DB_CONNECTION_FAILED,
-        message: 'Database error during logout',
-        context: { original: String(error) },
-      }, 'retryable');
+      const payload = parseRefreshToken(refreshToken);
+      const record = refreshTokenStore.get(payload.tokenId);
+      if (record) {
+        record.revokedAt = Date.now();
+      }
+
+      return ok(undefined);
+    } catch {
+      return ok(undefined);
     }
   },
 };

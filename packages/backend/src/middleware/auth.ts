@@ -1,61 +1,54 @@
-import { FastifyRequest, FastifyReply } from 'fastify';
-import { verifyAccessToken } from '../services/auth.js';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { Role } from '../core/domain.js';
 import { isOk } from '../core/result.js';
+import { verifyAccessToken } from '../services/auth.js';
 
-// Extend FastifyRequest to include user
 declare module 'fastify' {
   interface FastifyRequest {
     user?: {
       userId: string;
       email: string;
-      role: string;
+      role: Role;
+      name: string;
     };
   }
 }
 
-// Authentication middleware
-export async function authenticateRequest(
-  request: FastifyRequest,
-  reply: FastifyReply
-) {
-  // Get token from Authorization header or cookie
+export async function authenticateRequest(request: FastifyRequest, reply: FastifyReply) {
   const authHeader = request.headers.authorization;
-  const token = authHeader?.startsWith('Bearer ') 
-    ? authHeader.slice(7) 
-    : request.cookies.access_token;
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const cookieToken = request.cookies.access_token;
+  const token = bearerToken || cookieToken;
 
   if (!token) {
     return reply.status(401).send({
       error: {
         code: 'UNAUTHORIZED',
-        message: 'Access token required',
+        message: 'Token de acceso requerido',
       },
       recoverability: 'terminal',
     });
   }
 
-  // Verify token
-  const result = verifyAccessToken(token);
+  const verification = verifyAccessToken(token);
 
-  if (!isOk(result)) {
+  if (!isOk(verification)) {
     return reply.status(401).send({
-      error: result.error,
-      recoverability: result.recoverability,
+      error: verification.error,
+      recoverability: verification.recoverability,
     });
   }
 
-  // Attach user to request
-  request.user = result.data;
+  request.user = verification.data;
 }
 
-// Require specific role
-export function requireRole(...allowedRoles: string[]) {
+export function requireRole(...allowedRoles: Role[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     if (!request.user) {
       return reply.status(401).send({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication required',
+          message: 'Autenticacion requerida',
         },
         recoverability: 'terminal',
       });
@@ -65,7 +58,7 @@ export function requireRole(...allowedRoles: string[]) {
       return reply.status(403).send({
         error: {
           code: 'FORBIDDEN',
-          message: 'Insufficient permissions',
+          message: 'No tienes permisos para este recurso',
         },
         recoverability: 'terminal',
       });

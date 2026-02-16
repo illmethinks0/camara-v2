@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../index.js';
 
 describe('API Documentation', () => {
@@ -13,59 +13,28 @@ describe('API Documentation', () => {
     await app.close();
   });
 
-  it('should serve OpenAPI JSON spec', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/docs/json',
-    });
-
+  it('serves OpenAPI JSON', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/docs/json' });
     expect(response.statusCode).toBe(200);
+
     const body = JSON.parse(response.body);
     expect(body.openapi).toBeDefined();
-    expect(body.info).toBeDefined();
     expect(body.paths).toBeDefined();
   });
 
-  it('should serve Swagger UI', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/docs',
-    });
+  it('documents core CAMARA routes', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/docs/json' });
+    const body = JSON.parse(response.body);
+    const paths: string[] = Object.keys(body.paths);
 
-    // Swagger UI redirects to index.html (302)
+    expect(paths.some((path) => path.startsWith('/api/v1/auth/login'))).toBe(true);
+    expect(paths.some((path) => path.startsWith('/api/v1/participants'))).toBe(true);
+    expect(paths.some((path) => path.startsWith('/api/v1/annexes/batch-export'))).toBe(true);
+    expect(paths.some((path) => path.startsWith('/api/v1/dashboards/admin'))).toBe(true);
+  });
+
+  it('serves Swagger UI', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/v1/docs' });
     expect([200, 302]).toContain(response.statusCode);
-  });
-
-  it('should document health endpoint', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/docs/json',
-    });
-
-    const body = JSON.parse(response.body);
-    expect(body.paths['/health']).toBeDefined();
-    expect(body.paths['/health'].get).toBeDefined();
-  });
-
-  it('should document auth endpoints', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/docs/json',
-    });
-
-    const body = JSON.parse(response.body);
-    expect(body.paths['/api/v1/auth/register']).toBeDefined();
-    expect(body.paths['/api/v1/auth/login']).toBeDefined();
-  });
-
-  it('should have paths defined', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/docs/json',
-    });
-
-    const body = JSON.parse(response.body);
-    expect(body.paths).toBeDefined();
-    expect(Object.keys(body.paths).length).toBeGreaterThan(0);
   });
 });

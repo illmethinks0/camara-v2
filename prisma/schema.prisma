@@ -8,40 +8,23 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  name          String
-  role          UserRole  @default(user)
-  passwordHash  String    @map("password_hash")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  tasks         Task[]
-  sessions      Session[]
-  refreshTokens RefreshToken[]
+  participantProfile Participant?           @relation("ParticipantUser")
+  assignedParticipants InstructorAssignment[] @relation("InstructorAssignments")
+  signatureEntries    Signature[]           @relation("SignatureSigner")
+  attendanceTaken     AttendanceRecord[]    @relation("AttendanceInstructor")
+  refreshTokens       RefreshToken[]
+  auditLogs           AuditLog[]            @relation("AuditActor")
 
-  @@index([email])
-  @@index([deletedAt])
+  @@index([role])
   @@map("users")
-}
-
-model Session {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  tokenHash String   @unique @map("token_hash")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  ipAddress String?  @map("ip_address")
-  userAgent String?  @map("user_agent")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([tokenHash])
-  @@index([expiresAt])
-  @@map("sessions")
 }
 
 model RefreshToken {
@@ -51,89 +34,198 @@ model RefreshToken {
   expiresAt DateTime  @map("expires_at")
   revokedAt DateTime? @map("revoked_at")
   createdAt DateTime  @default(now()) @map("created_at")
-  ipAddress String?   @map("ip_address")
-  userAgent String?   @map("user_agent")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([tokenHash])
   @@index([expiresAt])
   @@map("refresh_tokens")
 }
 
-model Task {
-  id            String         @id @default(uuid())
-  title         String
-  description   String
-  status        TaskStatus     @default(pending)
-  priority      Int            @default(2)
-  assigneeId    String?        @map("assignee_id")
-  parentId      String?        @map("parent_id")
-  tags          String[]
-  deliverables  String[]
-  evals         String[]
-  lane          TaskLane       @default(backend)
-  risk          TaskRisk       @default(low)
-  diffEstimate  TaskDiffEstimate @map("diff_estimate")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+model Course {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  durationHours Int      @map("duration_hours")
+  startDate     DateTime @map("start_date") @db.Date
+  endDate       DateTime @map("end_date") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  assignee User? @relation(fields: [assigneeId], references: [id], onDelete: SetNull)
-  parent   Task? @relation("TaskHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children Task[] @relation("TaskHierarchy")
+  participants Participant[]
 
+  @@index([name])
+  @@map("courses")
+}
+
+model Participant {
+  id           String    @id @default(uuid())
+  userId       String?   @unique @map("user_id")
+  courseId     String    @map("course_id")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  idNumber     String    @map("id_number")
+  email        String
+  phone        String
+  currentPhase PhaseType @default(diagnostic) @map("current_phase")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user                  User?                  @relation("ParticipantUser", fields: [userId], references: [id], onDelete: SetNull)
+  course                Course                 @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  phases                Phase[]
+  annexes               Annex[]
+  instructorAssignments InstructorAssignment[]
+  signatures            Signature[]
+  attendanceRecords     AttendanceRecord[]
+
+  @@index([courseId])
+  @@index([currentPhase])
+  @@index([idNumber])
+  @@map("participants")
+}
+
+model InstructorAssignment {
+  id            String   @id @default(uuid())
+  instructorId  String   @map("instructor_id")
+  participantId String   @map("participant_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  instructor  User        @relation("InstructorAssignments", fields: [instructorId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([instructorId, participantId])
+  @@index([participantId])
+  @@map("instructor_assignments")
+}
+
+model Phase {
+  id            String      @id @default(uuid())
+  participantId String      @map("participant_id")
+  phaseType     PhaseType   @map("phase_type")
+  status        PhaseStatus @default(not_started)
+  startedAt     DateTime?   @map("started_at")
+  completedAt   DateTime?   @map("completed_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  annexes     Annex[]
+
+  @@unique([participantId, phaseType])
   @@index([status])
-  @@index([assigneeId])
-  @@index([parentId])
-  @@index([createdAt])
-  @@map("tasks")
+  @@map("phases")
+}
+
+model Annex {
+  id              String      @id @default(uuid())
+  participantId   String      @map("participant_id")
+  phaseId         String      @map("phase_id")
+  annexType       AnnexType   @map("annex_type")
+  status          AnnexStatus @default(generated)
+  templateVersion String      @map("template_version")
+  fileName        String      @map("file_name")
+  storagePath     String      @map("storage_path")
+  contentHash     String      @map("content_hash")
+  generatedAt     DateTime    @default(now()) @map("generated_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  phase       Phase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  signatures  Signature[]
+
+  @@index([participantId])
+  @@index([phaseId])
+  @@index([status])
+  @@map("annexes")
+}
+
+model Signature {
+  id                  String             @id @default(uuid())
+  annexId             String             @map("annex_id")
+  participantId       String?            @map("participant_id")
+  signerUserId        String?            @map("signer_user_id")
+  actorRole           SignatureActorRole @map("actor_role")
+  typedName           String?            @map("typed_name")
+  signatureDataUrl    String?            @map("signature_data_url")
+  signedAt            DateTime           @default(now()) @map("signed_at")
+  phaseSnapshot       PhaseType          @map("phase_snapshot")
+
+  annex       Annex        @relation(fields: [annexId], references: [id], onDelete: Cascade)
+  participant Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  signer      User?        @relation("SignatureSigner", fields: [signerUserId], references: [id], onDelete: SetNull)
+
+  @@index([annexId])
+  @@index([participantId])
+  @@index([signerUserId])
+  @@map("signatures")
+}
+
+model AttendanceRecord {
+  id            String   @id @default(uuid())
+  participantId String   @map("participant_id")
+  instructorId  String   @map("instructor_id")
+  sessionDate   DateTime @map("session_date") @db.Date
+  hours         Decimal  @db.Decimal(4, 1)
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  instructor  User        @relation("AttendanceInstructor", fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+  @@index([instructorId])
+  @@index([sessionDate])
+  @@map("attendance_records")
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  action    String
-  resource  String
-  context   Json
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  actorUserId  String?  @map("actor_user_id")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  context      Json?
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  @@index([userId])
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([resourceType])
   @@index([createdAt])
-  @@index([action])
   @@map("audit_logs")
 }
 
-enum UserRole {
-  user
-  admin
+enum Role {
+  administrator
+  instructor
+  participant
 }
 
-enum TaskStatus {
-  pending
+enum PhaseType {
+  diagnostic
+  training
+  completion
+}
+
+enum PhaseStatus {
+  not_started
   in_progress
-  done
-  blocked
+  completed
 }
 
-enum TaskLane {
-  frontend
-  backend
-  data
-  auth
-  qa
-  devops
+enum AnnexType {
+  annex_2
+  annex_3
+  annex_5
 }
 
-enum TaskRisk {
-  low
-  med
-  high
+enum AnnexStatus {
+  generated
+  signed
 }
 
-enum TaskDiffEstimate {
-  very_small
-  small
-  medium
-  large
+enum SignatureActorRole {
+  administrator
+  instructor
+  participant
 }

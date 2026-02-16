@@ -1,52 +1,36 @@
-import { describe, it, expect } from 'vitest';
-import { dbOperation, userRepository, taskRepository } from './db.js';
-import { isOk, isErr } from '../core/result.js';
+import { describe, expect, it } from 'vitest';
+import { courseRepository, dbOperation, participantRepository, userRepository } from './db.js';
+import { isErr, isOk } from '../core/result.js';
 
 describe('Database Adapter', () => {
-  describe('dbOperation wrapper', () => {
-    it('should return ok for successful operations', async () => {
-      const result = await dbOperation(async () => 'success');
+  describe('dbOperation', () => {
+    it('returns ok for successful operations', async () => {
+      const result = await dbOperation(async () => 'ok');
       expect(isOk(result)).toBe(true);
       if (isOk(result)) {
-        expect(result.data).toBe('success');
+        expect(result.data).toBe('ok');
       }
     });
 
-    it('should return err for failed operations', async () => {
+    it('returns err for failing operations', async () => {
       const result = await dbOperation(async () => {
-        throw new Error('DB error');
+        throw new Error('boom');
       });
       expect(isErr(result)).toBe(true);
     });
   });
 
-  describe('User Repository', () => {
-    it('should have findById method', () => {
-      expect(typeof userRepository.findById).toBe('function');
+  describe('Repositories', () => {
+    it('user repository exposes findByEmail', () => {
+      expect(typeof userRepository.findByEmail).toBe('function');
     });
 
-    it('should have create method', () => {
-      expect(typeof userRepository.create).toBe('function');
+    it('course repository exposes list', () => {
+      expect(typeof courseRepository.list).toBe('function');
     });
 
-    it('should return Result type from findById', async () => {
-      // This will fail since DB isn't set up, but tests the interface
-      const result = await userRepository.findById('test-id');
-      expect(typeof result.ok).toBe('boolean');
-    });
-  });
-
-  describe('Task Repository', () => {
-    it('should have findById method', () => {
-      expect(typeof taskRepository.findById).toBe('function');
-    });
-
-    it('should have create method', () => {
-      expect(typeof taskRepository.create).toBe('function');
-    });
-
-    it('should have findReady method', () => {
-      expect(typeof taskRepository.findReady).toBe('function');
+    it('participant repository exposes listForUser', () => {
+      expect(typeof participantRepository.listForUser).toBe('function');
     });
   });
 });

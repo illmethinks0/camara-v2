@@ -21,6 +21,12 @@
   color: var(--color-text-secondary);
 }
 
+.error {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-primary-red);
+  font-weight: var(--font-weight-semibold);
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

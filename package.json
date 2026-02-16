@@ -13,7 +13,7 @@
     "build": "npm run build --workspaces",
     "build:backend": "npm run build --workspace=packages/backend",
     "build:frontend": "npm run build --workspace=packages/frontend",
-    "test": "npm run test --workspaces",
+    "test": "npm run test:unit",
     "test:unit": "npm run test:backend && npm run test:frontend",
     "test:backend": "npm run test:unit --workspace=packages/backend",
     "test:frontend": "npm run test --workspace=packages/frontend",
@@ -22,7 +22,8 @@
     "format:check": "echo 'Format check not configured'",
     "db:generate": "npm run db:generate --workspace=packages/backend",
     "db:migrate:dev": "npm run db:migrate:dev --workspace=packages/backend",
-    "db:migrate:deploy": "npm run db:migrate:deploy --workspace=packages/backend"
+    "db:migrate:deploy": "npm run db:migrate:deploy --workspace=packages/backend",
+    "db:seed": "npm run db:seed --workspace=packages/backend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

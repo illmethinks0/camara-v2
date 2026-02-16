@@ -5,24 +5,57 @@ import { useDemoData } from '../contexts/DemoDataContext';
 import styles from './Dashboard.module.css';
 
 export const ParticipantDashboard: React.FC = () => {
-  const { participants, annexes, getCurrentPhase, getPhaseLabel, signAnnex, getCourseName } = useDemoData();
+  const {
+    participants,
+    annexes,
+    getCurrentPhase,
+    getPhaseLabel,
+    signAnnex,
+    downloadAnnex,
+    getCourseName,
+    isLoading,
+    error: contextError,
+  } = useDemoData();
   const [selectedParticipantId, setSelectedParticipantId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedParticipantId && participants[0]) {
+    if (participants.length === 0) {
+      setSelectedParticipantId('');
+      return;
+    }
+
+    const stillValid = participants.some((item) => item.id === selectedParticipantId);
+    if (!stillValid) {
       setSelectedParticipantId(participants[0].id);
     }
   }, [participants, selectedParticipantId]);
+
+  const runAction = async (action: () => Promise<void>) => {
+    setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      await action();
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : 'Operacion no disponible');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const participant = useMemo(
     () => participants.find((item) => item.id === selectedParticipantId),
     [participants, selectedParticipantId]
   );
+  const activeError = localError || contextError;
 
   if (!participant) {
     return (
       <section className={styles.page}>
-        <p className={styles.empty}>No hay participantes disponibles.</p>
+        <p className={styles.empty}>
+          {isLoading ? 'Cargando participante...' : 'No hay participantes disponibles.'}
+        </p>
       </section>
     );
   }
@@ -38,6 +71,8 @@ export const ParticipantDashboard: React.FC = () => {
           <p className={styles.subtitle}>Consulta de datos, anexos y estado de firma.</p>
         </div>
       </div>
+
+      {activeError ? <p className={styles.error}>{activeError}</p> : null}
 
       <div className={styles.card}>
         <label htmlFor="participant-selector" className={styles.fieldLabel}>
@@ -117,13 +152,31 @@ export const ParticipantDashboard: React.FC = () => {
                     <td>{getPhaseLabel(annex.phaseId)}</td>
                     <td>{annex.status === 'signed' ? 'Firmado' : 'Pendiente de firma'}</td>
                     <td>
-                      <Button
-                        size="small"
-                        onClick={() => signAnnex(annex.id)}
-                        disabled={annex.status === 'signed'}
-                      >
-                        Firmar
-                      </Button>
+                      <div className={styles.actions}>
+                        <Button
+                          size="small"
+                          variant="outline"
+                          onClick={() =>
+                            void runAction(async () => {
+                              await downloadAnnex(annex.id);
+                            })
+                          }
+                          disabled={isSubmitting}
+                        >
+                          Descargar
+                        </Button>
+                        <Button
+                          size="small"
+                          onClick={() =>
+                            void runAction(async () => {
+                              await signAnnex(annex.id);
+                            })
+                          }
+                          disabled={isSubmitting || annex.status === 'signed'}
+                        >
+                          Firmar
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -140,7 +193,16 @@ export const ParticipantDashboard: React.FC = () => {
             Tienes un anexo pendiente en la fase {getPhaseLabel(currentPhase.phaseId)}.
           </p>
           <div className={styles.actions}>
-            <Button onClick={() => signAnnex(currentPhase.annexId!)}>Firmar ahora</Button>
+            <Button
+              onClick={() =>
+                void runAction(async () => {
+                  await signAnnex(currentPhase.annexId!);
+                })
+              }
+              disabled={isSubmitting}
+            >
+              Firmar ahora
+            </Button>
           </div>
         </div>
       ) : null}

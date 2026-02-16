@@ -1,6 +1,5 @@
 /**
- * CAMARA v2 API Client
- * Implementation to satisfy TDD tests
+ * CAMARA v2 API Client (auth + session helpers)
  */
 
 import type {
@@ -11,50 +10,25 @@ import type {
   RegisterRequest,
   RegisterResponse,
   RefreshTokenResponse,
-  GetTasksResponse,
-  GetTaskResponse,
-  CreateTaskRequest,
-  CreateTaskResponse,
-  UpdateTaskRequest,
-  UpdateTaskResponse,
 } from '../types/camara';
 
 const API_BASE_URL = '/api/v1';
 
-/**
- * Gets the stored access token
- */
-const getAccessToken = (): string | null => {
-  return localStorage.getItem('accessToken');
-};
+const getAccessToken = (): string | null => localStorage.getItem('accessToken');
 
-/**
- * Gets the stored refresh token
- */
-const getRefreshToken = (): string | null => {
-  return localStorage.getItem('refreshToken');
-};
+const getRefreshToken = (): string | null => localStorage.getItem('refreshToken');
 
-/**
- * Stores authentication tokens
- */
 const setTokens = (tokens: AuthTokens): void => {
   localStorage.setItem('accessToken', tokens.accessToken);
   localStorage.setItem('refreshToken', tokens.refreshToken);
 };
 
-/**
- * Clears authentication tokens
- */
 const clearTokens = (): void => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
 };
 
-/**
- * Creates standard headers with authorization if token exists
- */
-const createHeaders = (includeAuth: boolean = false): HeadersInit => {
+const createHeaders = (includeAuth = false): HeadersInit => {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
@@ -62,26 +36,23 @@ const createHeaders = (includeAuth: boolean = false): HeadersInit => {
   if (includeAuth) {
     const token = getAccessToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
   }
 
   return headers;
 };
 
-/**
- * Parses API response and returns standardized result
- */
 const parseResponse = async <T>(response: Response): Promise<APIResult<T>> => {
   try {
-    const data = await response.json();
+    const payload = await response.json();
 
     if (!response.ok) {
       return {
         success: false,
-        error: data.error || {
+        error: payload.error || {
           code: 'UNKNOWN_ERROR',
-          message: 'An unknown error occurred',
+          message: 'Error desconocido',
           recoverability: 'terminal',
         },
       };
@@ -89,52 +60,42 @@ const parseResponse = async <T>(response: Response): Promise<APIResult<T>> => {
 
     return {
       success: true,
-      data: data.data,
+      data: (payload.data ?? payload) as T,
     };
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: {
         code: 'PARSE_ERROR',
-        message: 'Failed to parse response',
+        message: 'No se pudo procesar la respuesta del servidor',
         recoverability: 'terminal',
       },
     };
   }
 };
 
-/**
- * Handles network and other errors
- */
 const handleError = (error: unknown): APIResult<never> => {
-  if (error instanceof Error) {
-    if (error.message.includes('Network')) {
-      return {
-        success: false,
-        error: {
-          code: 'NETWORK_ERROR',
-          message: 'Network error. Please check your connection and try again.',
-          recoverability: 'retryable',
-        },
-      };
-    }
+  if (error instanceof Error && error.message.includes('Network')) {
+    return {
+      success: false,
+      error: {
+        code: 'NETWORK_ERROR',
+        message: 'Error de red. Comprueba tu conexion e intentalo de nuevo.',
+        recoverability: 'retryable',
+      },
+    };
   }
 
   return {
     success: false,
     error: {
       code: 'UNKNOWN_ERROR',
-      message: 'An unexpected error occurred',
+      message: 'Ocurrio un error inesperado',
       recoverability: 'terminal',
     },
   };
 };
 
-// ==================== AUTHENTICATION ====================
-
-/**
- * Register a new user
- */
 export const register = async (
   request: RegisterRequest
 ): Promise<APIResult<RegisterResponse>> => {
@@ -147,7 +108,7 @@ export const register = async (
 
     const result = await parseResponse<RegisterResponse>(response);
 
-    if (result.success && result.data) {
+    if (result.success && result.data?.tokens) {
       setTokens(result.data.tokens);
     }
 
@@ -157,12 +118,7 @@ export const register = async (
   }
 };
 
-/**
- * Login with credentials
- */
-export const login = async (
-  request: LoginRequest
-): Promise<APIResult<LoginResponse>> => {
+export const login = async (request: LoginRequest): Promise<APIResult<LoginResponse>> => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
@@ -172,7 +128,7 @@ export const login = async (
 
     const result = await parseResponse<LoginResponse>(response);
 
-    if (result.success && result.data) {
+    if (result.success && result.data?.tokens) {
       setTokens(result.data.tokens);
     }
 
@@ -182,19 +138,16 @@ export const login = async (
   }
 };
 
-/**
- * Refresh access token
- */
 export const refreshToken = async (): Promise<APIResult<RefreshTokenResponse>> => {
-  const refreshToken = getRefreshToken();
+  const refresh = getRefreshToken();
 
-  if (!refreshToken) {
+  if (!refresh) {
     clearTokens();
     return {
       success: false,
       error: {
         code: 'NO_REFRESH_TOKEN',
-        message: 'No refresh token available',
+        message: 'No hay refresh token disponible',
         recoverability: 'terminal',
       },
     };
@@ -204,7 +157,7 @@ export const refreshToken = async (): Promise<APIResult<RefreshTokenResponse>> =
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: createHeaders(),
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({ refreshToken: refresh }),
     });
 
     const result = await parseResponse<RefreshTokenResponse>(response);
@@ -226,177 +179,19 @@ export const refreshToken = async (): Promise<APIResult<RefreshTokenResponse>> =
   }
 };
 
-/**
- * Logout user
- */
 export const logout = async (): Promise<APIResult<void>> => {
-  const token = getAccessToken();
-
-  if (token) {
-    try {
-      await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: 'POST',
-        headers: createHeaders(true),
-      });
-    } catch (error) {
-      // Ignore errors during logout
-    }
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      headers: createHeaders(true),
+      body: JSON.stringify({ refreshToken: getRefreshToken() ?? '' }),
+    });
+  } catch {
+    // best effort logout
   }
 
   clearTokens();
   return { success: true };
 };
 
-// ==================== TASKS ====================
-
-/**
- * Get all tasks
- */
-export const getTasks = async (): Promise<APIResult<GetTasksResponse>> => {
-  const token = getAccessToken();
-
-  if (!token) {
-    return {
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        recoverability: 'terminal',
-      },
-    };
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/tasks`, {
-      method: 'GET',
-      headers: createHeaders(true),
-    });
-
-    return await parseResponse<GetTasksResponse>(response);
-  } catch (error) {
-    return handleError(error);
-  }
-};
-
-/**
- * Get a single task by ID
- */
-export const getTaskById = async (id: string): Promise<APIResult<GetTaskResponse>> => {
-  const token = getAccessToken();
-
-  if (!token) {
-    return {
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        recoverability: 'terminal',
-      },
-    };
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-      method: 'GET',
-      headers: createHeaders(true),
-    });
-
-    return await parseResponse<GetTaskResponse>(response);
-  } catch (error) {
-    return handleError(error);
-  }
-};
-
-/**
- * Create a new task
- */
-export const createTask = async (
-  request: CreateTaskRequest
-): Promise<APIResult<CreateTaskResponse>> => {
-  const token = getAccessToken();
-
-  if (!token) {
-    return {
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        recoverability: 'terminal',
-      },
-    };
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/tasks`, {
-      method: 'POST',
-      headers: createHeaders(true),
-      body: JSON.stringify(request),
-    });
-
-    return await parseResponse<CreateTaskResponse>(response);
-  } catch (error) {
-    return handleError(error);
-  }
-};
-
-/**
- * Update an existing task
- */
-export const updateTask = async (
-  id: string,
-  request: UpdateTaskRequest
-): Promise<APIResult<UpdateTaskResponse>> => {
-  const token = getAccessToken();
-
-  if (!token) {
-    return {
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        recoverability: 'terminal',
-      },
-    };
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-      method: 'PATCH',
-      headers: createHeaders(true),
-      body: JSON.stringify(request),
-    });
-
-    return await parseResponse<UpdateTaskResponse>(response);
-  } catch (error) {
-    return handleError(error);
-  }
-};
-
-/**
- * Delete a task
- */
-export const deleteTask = async (id: string): Promise<APIResult<void>> => {
-  const token = getAccessToken();
-
-  if (!token) {
-    return {
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: 'Authentication required',
-        recoverability: 'terminal',
-      },
-    };
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
-      method: 'DELETE',
-      headers: createHeaders(true),
-    });
-
-    return await parseResponse<void>(response);
-  } catch (error) {
-    return handleError(error);
-  }
-};
+export const isAuthenticated = (): boolean => Boolean(getAccessToken());

@@ -7,7 +7,7 @@ export async function registerSwagger(app: FastifyInstance) {
     openapi: {
       info: {
         title: 'CAMARA v2 API',
-        description: 'Production-ready task management API with Railway pattern',
+        description: 'Cámara de Comercio Menorca training platform API',
         version: '1.0.0',
       },
       servers: [

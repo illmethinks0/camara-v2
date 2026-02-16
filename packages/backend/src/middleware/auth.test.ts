@@ -1,75 +1,64 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { createApp } from '../index.js';
-import { prisma } from '../adapters/db.js';
+import { describe, expect, it, vi } from 'vitest';
+import { authenticateRequest, requireRole } from './auth.js';
 
-describe('Authentication Middleware', () => {
-  let app: Awaited<ReturnType<typeof createApp>>;
-  let authToken: string;
-  let userId: string;
+describe('Authentication middleware', () => {
+  it('authenticateRequest returns 401 when token missing', async () => {
+    const request = { headers: {}, cookies: {} } as any;
+    const reply = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+    } as any;
 
-  beforeAll(async () => {
-    app = await createApp();
-    await app.ready();
+    await authenticateRequest(request, reply);
 
-    // Register and login to get token
-    const email = `middleware-test-${Date.now()}@example.com`;
-    const registerResponse = await app.inject({
-      method: 'POST',
-      url: '/api/v1/auth/register',
-      payload: {
-        email,
-        name: 'Middleware Test User',
-        password: 'SecurePassword123!',
+    expect(reply.status).toHaveBeenCalledWith(401);
+    expect(reply.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'UNAUTHORIZED' }),
+      })
+    );
+  });
+
+  it('requireRole returns 403 for unauthorized role', async () => {
+    const request = {
+      user: {
+        userId: 'u1',
+        email: 'instructor@example.com',
+        role: 'instructor',
       },
-    });
+    } as any;
+    const reply = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+    } as any;
 
-    const body = JSON.parse(registerResponse.body);
-    authToken = body.accessToken;
-    userId = body.user.id;
+    const guard = requireRole('administrator');
+    await guard(request, reply);
+
+    expect(reply.status).toHaveBeenCalledWith(403);
+    expect(reply.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'FORBIDDEN' }),
+      })
+    );
   });
 
-  afterAll(async () => {
-    // Cleanup
-    if (userId) {
-      await prisma.user.delete({ where: { id: userId } }).catch(() => {});
-    }
-    await app.close();
-  });
-
-  it('should reject requests without token', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/tasks',
-      headers: {},
-    });
-
-    // Tasks endpoint doesn't require auth currently
-    // This test verifies the middleware exists
-    expect([200, 401]).toContain(response.statusCode);
-  });
-
-  it('should accept requests with valid Bearer token', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/tasks',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
+  it('requireRole allows authorized role', async () => {
+    const request = {
+      user: {
+        userId: 'u1',
+        email: 'admin@example.com',
+        role: 'administrator',
       },
-    });
+    } as any;
+    const reply = {
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+    } as any;
 
-    expect(response.statusCode).toBe(200);
-  });
+    const guard = requireRole('administrator');
+    await guard(request, reply);
 
-  it('should reject requests with invalid token', async () => {
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/v1/tasks',
-      headers: {
-        Authorization: 'Bearer invalid-token',
-      },
-    });
-
-    // Should work since tasks endpoint doesn't require auth
-    expect([200, 401]).toContain(response.statusCode);
+    expect(reply.status).not.toHaveBeenCalled();
   });
 });

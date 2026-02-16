@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { authService, verifyAccessToken } from '../services/auth.js';
+import { authService } from '../services/auth.js';
 import { httpBoundary } from '../adapters/http.js';
+import { authenticateRequest } from '../middleware/auth.js';
 import { z } from 'zod';
 import rateLimit from '@fastify/rate-limit';
 
@@ -18,6 +19,10 @@ const loginSchema = z.object({
 
 const refreshSchema = z.object({
   refreshToken: z.string(),
+});
+
+const logoutSchema = z.object({
+  refreshToken: z.string().optional(),
 });
 
 // Auth routes
@@ -97,7 +102,7 @@ export async function authRoutes(app: FastifyInstance) {
 
   // POST /auth/logout
   app.post('/logout', async (request, reply) => {
-    const parseResult = refreshSchema.safeParse(request.body);
+    const parseResult = logoutSchema.safeParse(request.body);
     if (!parseResult.success) {
       return reply.status(400).send({
         error: {
@@ -110,8 +115,23 @@ export async function authRoutes(app: FastifyInstance) {
     }
 
     await httpBoundary(
-      () => authService.logout(parseResult.data.refreshToken),
+      () => authService.logout(parseResult.data.refreshToken ?? ''),
       reply
     );
+  });
+
+  // GET /auth/me
+  app.get('/me', { preHandler: [authenticateRequest] }, async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+        recoverability: 'terminal',
+      });
+    }
+
+    return reply.send({ user: request.user });
   });
 }

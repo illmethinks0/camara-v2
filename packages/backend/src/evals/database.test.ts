@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { prisma } from '../adapters/db.js';
 
-describe('Database Connection', () => {
+const describeDb =
+  process.env.RUN_DB_TESTS === 'true'
+    ? describe
+    : describe.skip;
+
+describeDb('Database Connection', () => {
   it('should connect to database', async () => {
     // Simple query to test connection
     const result = await prisma.$queryRaw`SELECT 1 as test`;

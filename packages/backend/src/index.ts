@@ -2,7 +2,6 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { authRoutes } from './routes/auth.js';
-import { taskRoutes } from './routes/tasks.js';
 import { registerSwagger } from './plugins/swagger.js';
 
 // Create app
@@ -48,7 +47,6 @@ export async function createApp() {
 
   // API routes
   app.register(authRoutes, { prefix: '/api/v1/auth' });
-  app.register(taskRoutes, { prefix: '/api/v1/tasks' });
 
   return app;
 }

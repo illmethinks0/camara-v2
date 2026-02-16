@@ -1,0 +1,34 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-md);
+  background-color: var(--color-surface-sand);
+}
+
+.card {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background-color: var(--color-surface-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-h1);
+}
+
+.subtitle {
+  margin: 0 0 var(--spacing-xl) 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+}
+
+.buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: center;
+}

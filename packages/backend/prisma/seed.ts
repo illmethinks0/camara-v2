@@ -42,6 +42,15 @@ async function main() {
     },
   });
 
+  await prisma.user.create({
+    data: {
+      email: 'godmode@camara-menorca.es',
+      role: 'administrator',
+      name: 'God Mode Admin',
+      passwordHash,
+    },
+  });
+
   const instructor1 = await prisma.user.create({
     data: {
       email: 'instructor1@camara-menorca.es',
@@ -280,6 +289,7 @@ async function main() {
   });
 
   console.log('Seed completado: cuentas demo y datos iniciales listos.');
+  console.log('Super admin: godmode@camara-menorca.es / CamaraMenorca2025');
 }
 
 async function createDefaultPhases(participantId: string, currentPhase: 'diagnostic' | 'training' | 'completion') {

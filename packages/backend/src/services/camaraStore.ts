@@ -235,6 +235,14 @@ function createInitialState(): StoreState {
       createdAt,
     },
     {
+      id: 'user-admin-godmode',
+      email: 'godmode@camara-menorca.es',
+      name: 'God Mode Admin',
+      role: 'administrator',
+      passwordHash: PASSWORD_HASH,
+      createdAt,
+    },
+    {
       id: 'user-instructor-carlos',
       email: 'instructor1@camara-menorca.es',
       name: 'Carlos Martinez Lopez',
